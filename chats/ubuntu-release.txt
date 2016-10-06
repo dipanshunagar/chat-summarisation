@@ -1,0 +1,92 @@
+[00:16] <micahg> cjwatson: I see slangasek and Riddell "around", don't know if they're able to help ATM though
+[00:18] <Riddell> looking
+[00:22] <Riddell> cjwatson: accepted
+[00:22] <Riddell> (I'm nearly in North American time)
+[08:48] <cjwatson> Riddell: thanks!
+[13:04] <jibel> skaet or anyone could moderate the QA Status sent to ubuntu-release, thanks
+[14:36] <Laney> any news on when the new ppc buildd is going to come around?
+[14:38] <cjwatson> none as yet, sorry :-/
+[14:38] <Laney> not your fault, just drags a bit
+[15:25] <skaet> jibel done.   possible to subscribe?
+[15:53] <jibel> skaet, I promise I'll stop sending from the wrong address :)
+[15:53] <skaet> thanks jibel.  :)
+[18:40] <GridCube> good evening
+[18:41] <GridCube> I would like to speak to the person in charge of the new testing reporting site, the one hosted on http://91.189.93.73/
+[18:41] <GridCube> :)
+[18:43] <cjwatson> stgraber: ^-
+[18:43] <stgraber> GridCube: yes?
+[18:44] <GridCube> :D hello stgraber
+[18:45] <GridCube> I do a lot of testings for Xubuntu, and in this past cycle we where using a google spreadsheet to store the results of daily tests
+[18:45] <GridCube> so i came and asked if i could do a simple testing reporting site
+[18:46] <GridCube> as i had never done any programs or nothing i came up with this:
+[18:46] <GridCube> http://79.99.1.99/~gridcube/
+[18:46] <GridCube> it responded to our needs
+[18:46] <cjwatson> did you not realise that iso.qa.ubuntu.com existed, then?
+[18:46] <GridCube> but your testing report site seems a lot better
+[18:46] <cjwatson> (stgraber's new site is a newer version of that)
+[18:46] <GridCube> cjwatson, iso.qa.ubuntu.com is for milestones, not for daily test
+[18:47] <cjwatson> ah, I understand, it's only with the rewrite that we expanded it to dailies
+[18:47] <GridCube> :)
+[18:47] <cjwatson> anyway, dinnertime, so I'll stop poking my nose in
+[18:48] <GridCube> all the work on this reporting site stoped when we learned that we where going to use yours instead
+[18:48] <stgraber> GridCube: that indeed looks a lot like what's covered by the daily milestone in the new iso tracker
+[18:48] <GridCube> but some things we where working on was on the idea of having multiple testing profiles for a user
+[18:49] <stgraber> like for different hardware?
+[18:49] <GridCube> because many users do multiple tests on multiple hardware
+[18:49] <GridCube> yes
+[18:49] <stgraber> if so, we have that now too, just not turned on for alpha-1
+[18:49] <GridCube> :o
+[18:49] <GridCube> awesome
+[18:49] <stgraber> as for alpha-1 I need to be able to re-import the results into the old tracker
+[18:50] <stgraber> but for alpha-2 we'll have that and hopefully the integration with the LP/Ubuntu friendly database for hardware details
+[18:50] <GridCube> another thing we where talking about was on the posiblitiy of showing in the same reporting page all the known bugs for the last days, so testers could knew what to look for just there
+[18:51] <stgraber> GridCube: you may be interested by: https://blueprints.launchpad.net/ubuntu/+spec/foundations-p-iso-tracker
+[18:51] <stgraber> GridCube: jibel's report (when it's not crashing as you noticed ;)) should give you that information
+[18:51] <stgraber> GridCube: if not, we can either extend that one or add a new one
+[18:52] <stgraber> if you're interested in helping out (writing new reports, ...), the code is at: lp:~ubuntu-qa-website-devel/ubuntu-qa-website/drupal7-rewrite/ (it's PHP, developed as a Drupal 7 module)
+[18:52] <GridCube> and if a user reported an issue with a bug, and he was not sing as an Affected user, the site should mark it automagically
+[18:53] <GridCube> as i said Im just learning but yes i would like to help
+[18:53] <madnick> hehe, we were on the edge of making our own system: https://launchpad.net/dirs just before the UDS
+[18:53] <stgraber> ah, that's interesting but tricky to do as AFAIK Launchpad doesn't let us mark someone else as being affected
+[18:54] <stgraber> but one plan is to have bdmurray work a bit on our LP integration script to push more information in the bug instead of just adding a single tag
+[18:54] <GridCube> :) awesome
+[18:54]  * GridCube brb cake
+[18:57] <stgraber> GridCube, madnick: hehe, I hope it'll be much easier to make sure the main tracker suits your needs rather than having to implement your own :) patches/branches are welcome and so are ideas (to be prioritized as I don't have a lot of time to work on the tracker this cycle)
+[18:57] <madnick> :)
+[19:00] <GridCube> :)
+[19:01]  * GridCube http://imagebin.org/185637
+[19:01] <GridCube> :o wrong tab
+[19:05] <GridCube> ok stgraber :) thank you very much for being so kind
+[19:15] <stgraber> GridCube: the report displays now so you can have a look at what kind of data is in there (bug isn't fixed but I made it at least display something :))
+[19:17] <GridCube> sorry, I do not understand
+[19:27] <stgraber> GridCube: http://91.189.93.73/qatracker/reports/defects works now
+[19:58] <tumbleweed> stgraber: um, somehow I'm logged into your tracker as "Home
+[19:58] <tumbleweed> err
+[19:58] <tumbleweed> harveymjoscar
+[19:58] <stgraber> oh, interesting :)
+[20:01] <stgraber> tumbleweed: can you try logout/login? based on the logs you managed to connect during the 3s it took me to disable/upgrade/re-enable the modules after a code update
+[20:01] <tumbleweed> hah
+[20:02] <stgraber> "Session opened for stefanor."
+[20:02] <stgraber> that looks better
+[20:02] <tumbleweed> yeah
+[20:03]  * tumbleweed doesn't want to know how drupal handles sessions, but clearly not well enough
+[20:03] <stgraber> well, believe me, you don't want to know how I'm doing the automatic account merging with SSO either ;)
+[20:04] <tumbleweed> hrm, "Registration successful"
+[20:04] <tumbleweed> I assume that means I didn't have an account before
+[20:04] <stgraber> or that your previous account was different enough that my script couldn't find it
+[20:06] <stgraber> I think Drupal's session management is relatively sane, though you managed to connect at the exact time where Drupal was messing with its cache, Drupal's caching is far from being sane :)
+=== Ursinha is now known as Ursinha-afk
+[22:15] <ev> mmm, did the process for becoming the cdimage user change recently?
+[22:15] <ev> sudo -u cdimage -i is asking for my password
+[22:22] <cjwatson> you're on the wrong machine; use nusakan
+[22:23] <cjwatson> antimony is no longer cdimage
+[22:23] <cjwatson> (careful to switch over your checkouts)
+[22:25] <elmo> blink
+[22:25] <elmo> any objections to me locking people out of antimony to avoid this kind of confusion?
+[22:26] <elmo> well - present the same confusion in a less dangerous fashion ;-)
+[22:26] <cjwatson> no, although does the offer to give us antimony as a piuparts runner still stand?
+[22:26] <cjwatson> (some people might want their home directories, mind; Spads intentionally didn't sync them all over)
+[22:27] <elmo> piuparts?  I don't remember that - I thought it was going to be a lintian lab, though I see that came up elsewhere, and perhaps I'm just on crash
+[22:27] <elmo> crack too
+[22:27] <cjwatson> it was originally lintian+piuparts, I think, and then broder did lintian on ubuntuwire
+[22:28] <cjwatson> which was kind of yay, fewer work items for meeeee

@@ -1,0 +1,1722 @@
+[12:12] <jmg> its not relevant
+[12:12] <jmg> to my issue
+[12:12] <LaserJock> ah
+[12:13] <LaserJock> well, if you've searched and can't find a similar bug you can always file one if you think there is indeed a bug
+[12:18] <LaserJock> cjwatson: does/can a sync from Debian overwrite and existing .orig.tar.gz?
+[12:18] <LaserJock> *an
+[12:19] <cjwatson> not one with the same name, no
+[12:19] <LaserJock> we've got a situation where Ubuntu had an .orig.tar.gz before Debian
+[12:19] <cjwatson> the only thing you can do in that circumstance is a "fake sync" using the Ubuntu .orig.tar.gz but producing a result equivalent to the Debian package
+[12:20] <LaserJock> same version, files are the same, just different creation times on the tarball so the md5sums don't match
+[12:20] <cjwatson> normally using the Debian diff, but check that the Debian and Ubuntu .orig.tar.gzs produce basically the same content
+[12:20] <cjwatson> right, so Ubuntu .orig.tar.gz, Debian .diff.gz, new debian/changelog entry with "build1" on the end, upload
+[12:20] <LaserJock> that's what I was thinking, excellent
+[12:21] <LaserJock> thanks
+[12:21] <bhale> would the next sync work after that?
+[12:21] <bhale> or you are stuck until new upstream
+[12:21] <LaserJock> stuck until new upstream I guess
+[12:21] <bhale> thought so
+[12:21] <LaserJock> this has happened more then once I think
+[12:22] <LaserJock> it would be nice if we could just replace the Ubuntu .orig.tar.gz with the Debian one
+[12:22] <shawarma> LaserJock: The problem is the old .dsc files that still contain the old md5.
+[12:22] <shawarma> LaserJock: and they're all stored in the same placed and signed and everything.
+[12:23] <cjwatson> bhale: as LaserJock said
+[12:23] <cjwatson> LaserJock: breaks mirrors, no can do
+[12:24] <bhale> LaserJock: well
+[12:24] <cjwatson> shawarma: also that mirrors would have to use rsync --checksum rather than just relying on filenames, which is a big fat extra load
+[12:24] <bhale> LaserJock: it is often known what cases it will happen in
+[12:24] <bhale> LaserJock: a heads up to the Debian maintainer usually makes it a non-issue in my experience
+[12:24] <shawarma> cjwatson: Oh, i thought they did that already.
+[12:24] <shawarma> cjwatson: But of course, that'd be silly since we never change any existing files.
+[12:25] <shawarma> cjwatson: ..apart from Packages.gz and such.
+[12:26] <shawarma> cjwatson: Are Release, Sources, and Packages rsynced on the side then?
+[12:26] <cjwatson> filenames are unique in the archive; this is an invariant
+[12:26] <cjwatson> sure
+[12:26] <cjwatson> they're often done in a separate
+[12:26] <cjwatson> er
+[12:26] <cjwatson> dists/ is different
+[12:26] <cjwatson> in fact I think it's just pool/ that has the uniqueness constraint - it's the biggest bit by far
+[12:26] <alex-weej> whoever recommended dd_rhelp to me the other day
+[12:26] <alex-weej> you are a LEGEND
+[12:27] <alex-weej> it is closing up dead holes on my disk image really well
+[12:27] <cjwatson> shawarma: I believe so
+[12:27] <cjwatson> see e.g. http://www.debian.org/mirror/anonftpsync
+[12:28] <LaserJock> cjwatson: if we upload as build1 will it cause problems for the Feisty+1 syncing (i.e. normally build1 packages are automatically synced)?
+[12:29] <shawarma> cjwatson: I see. That would explain why Packages sometimes referes to files that are no more.
+[12:30] <cjwatson> LaserJock: no; at worst those syncs will harmlessly fail and will have to be merged
+[12:30] <cjwatson> (this isn't a new problem - we have a fair bit of experience with this :-))
+[12:30] <LaserJock> heh
+[12:30] <LaserJock> ok, thanks
+[12:30] <cjwatson> np
+[12:30] <shawarma> cjwatson: So the complete version would be what? Debian is 1.27-2, so we'd make 1.27-2ubuntu0build1 ?
+[12:30] <cjwatson> shawarma: right
+[12:30] <cjwatson> no, 1.27-2build1
+[12:31] <cjwatson> the effect of "ubuntu" in a version is precisely to suppress automatic syncing
+[12:31] <shawarma> cjwatson: ...which we want?
+[12:31] <cjwatson> in this case you don't want to do that - either there's no new upstream and the sync will fail harmlessly, or there's a new upstream and you want to autosync
+[12:31] <shawarma> cjwatson: ..since manual intervention is needed anyhow.
+[12:31] <cjwatson> only if there's no new upstream
+[12:32] <cjwatson> we don't want to overload people doing merges, so if the worst thing that happens is that a sync fails, big deal, we ignore that
+[12:32] <shawarma> cjwatson: Ah... Yes, now I get it.
+[12:32] <cjwatson> it's better to try to autosync where possible
+[12:32] <shawarma> cjwatson: Indeed. Makes sense. Thanks.
+=== o_cee [n=oscar@c83-249-96-144.bredband.comhem.se]  has joined #ubuntu-devel
+=== mat [n=mat@igoan/mat]  has joined #ubuntu-devel
+=== rmjb [n=richard@cuscon22147.tstt.net.tt]  has joined #ubuntu-devel
+[12:48] <jdong> bug 54684, it apparently approved for edgy-updates but it hasn't been moved from proposed yet
+[12:48] <Ubugtu> Malone bug 54684 in nautilus "High CPU usage" [Unknown,Fix released]  http://launchpad.net/bugs/54684
+[12:48] <jdong> excuse my ignorance abourt SRU's
+[12:51] <infinity> Stuff isn't moved from -proposed to -updates, it requres a second upload currently.
+[12:51] <infinity> Oh, and the second upload happened.
+[12:52] <holycow> hi guys
+=== geser [n=michael@dialin104091.justdsl.de]  has joined #ubuntu-devel
+[12:53] <holycow> anyone here good at packaging?  i was curious if i could get someone to compile and package these drivers: http://doc.gwos.org/index.php/Nvidia_nForce_SoundStorm
+[12:53] <holycow> i'd just like to have the .deb around for the future, i won't be buying this damned chipset anymore
+[12:55] <infinity> holycow: Try #ubuntu-motu
+[12:55] <holycow> danke
+[12:55] <infinity> (If you want it packaged in multiverse)
+[12:55] <infinity> It's certainly never going to be in restricted, since nvidia doesn't support the driver anymore.
+[12:55] <holycow> not a bad idea, never thought of it
+[12:55] <holycow> nforce is no longer supported?
+[12:56] <infinity> No, the driver isn't supported.  nvidia tells people to use the open source drivers instead.
+[12:56] <holycow> for nforce?
+[12:56] <infinity> (One would assume they're contributing to the open source drivers sucking less, slowly)
+[12:56] <infinity> For nforce sound, yes.
+[12:56] <holycow> odd
+[12:56] <holycow> well they do provide source files for the chipset, the chipset controls a bunch of things
+[12:57] <Solarion> is the gpg bug set to be pushed out soon?
+[12:57] <holycow> nforce sound eh?  would you know anything about nforce network card or vid support?
+[12:58] <holycow> i presuve nv drivers supports video
+[12:58] <holycow> maybe then just getting a newer kernel might workie
+[12:58] <mjg59> They're all supported with open drivers
+[12:59] <holycow> okay, in that case, it must be just that dapper doesn't have the latest builds of those, cool thats awesome to know
+[12:59] <holycow> i didn't manage to google that up
+=== jonh_wendell [n=wendell@40-88-199-200.vcnet.com.br]  has joined #ubuntu-devel
+[12:59] <holycow> did nvidia open source the drivers or did they just give up when someone reverse engineered them?
+[01:00] <bhale> the later, roughly
+[01:00] <holycow> heh
+[01:00] <Burgwork> holycow: more a matter of poking the hardware and seeing how it jumps
+[01:01] <holycow> aha okay.  
+[01:01] <geser> keescook: I've working packages for gnupg2 2.0.1
+[01:02] <keescook> geser: great, do you have a URL for them?
+[01:03] <geser> what exactly should I upload? is the diff.gz enough?
+[01:03] <holycow> would it be fair to say that the best supported chipset these days are intel chipsets?
+[01:03] <mjg59> Yes
+[01:03] <holycow> then its time to switch i think
+[01:04] <holycow> thank you for the info guys, greatly appreciate that
+[01:06] <geser> keescook: is the diff.gz enough? 
+=== lotusleaf [n=lotuslea@kernel-panic/member/carne.asada.burrito]  has joined #ubuntu-devel
+[01:09] <LaserJock> geser: generally debdiffs are nicer :-)
+[01:09] <geser> also for new upstream versions?
+[01:10] <LaserJock> hmm, I think I'd rather have the whole package in that case
+[01:10] <jmg> topic
+[01:10] <jdong> infinity: thanks for taking care of the gnome-vfs2 thing :)
+[01:11] <keescook> geser: can you get me the URL for the orig too?
+[01:11] <jmg> http://pastebin.ca/270015
+[01:11] <jmg> ideas?
+=== jonh_wendell [n=wendell@40-88-199-200.vcnet.com.br]  has left #ubuntu-devel ["Bye"] 
+[01:13] <geser> keescook: I will upload my used orig.tar.gz to some webspace (ftp.gnupg.org has only tar.bz2)
+[01:13] <keescook> geser: okay, thanks.
+=== Arrogance [n=aks@ottawa-hs-64-26-148-159.d-ip.magma.ca]  has joined #ubuntu-devel
+=== bronson [n=bronson@66.160.177.201]  has joined #ubuntu-devel
+=== anibal [n=anibal@debian/developer/anibal]  has joined #ubuntu-devel
+[01:15] <jdong> heh, iptables is a LOT more bothersome when it plays music
+[01:15] <jdong> guess that must be why nobody else does it :D
+[01:16] <geser> keescook: I also added libcurl3-gnutls-dev to build-depends as this fixes bug 62864 for me (it also happens with gnupg2). is that ok?
+[01:16] <Ubugtu> Malone bug 62864 in gnupg "[Edgy]  Refreshing my keyring stops after some keys (keyserver time out)" [Undecided,Unconfirmed]  http://launchpad.net/bugs/62864
+[01:16] <cjwatson> jmg: pvscan doesn't take a device name, for a start. Try vgscan?
+[01:17] <keescook> geser: I assume so; I've got a path fix for it too, so I'll probably apply that to yours before I upload it
+[01:18] <cjwatson> (or, at least, it didn't take a device name in the sarge system with lvm I have handy. hmm)
+=== bddebian [n=bdefrees@c-71-224-172-103.hsd1.pa.comcast.net]  has joined #ubuntu-devel
+[01:19] <lifeless> jdong: it does not take on on my edgy server
+[01:19] <lifeless> cjwatson: ^s/on/&e/
+[01:19] <lifeless> jdong: sorry, wrong nick
+[01:20] <jdong> cjwatson: no, pvscan doesn't take device names on dapper or edgy
+[01:21] <jdong> jmg: ^^
+[01:21] <geser> keescook: http://members.ping.de/~mb/gnupg2/
+[01:21] <jmg> cjwatson: pvscan/pvdisplay both have null output
+[01:22] <keescook> geser: thanks, snagging now
+[01:22] <jdong> jmg: you sure you've fdisked your partition to have linux LVM type?
+[01:22] <jmg> jdong: yes
+[01:22] <HrdwrBoB> er
+[01:22] <jmg> though that isnt required
+[01:22] <HrdwrBoB> it needs to be made a pv first
+[01:22] <HrdwrBoB> partition type is not enough
+[01:23] <HrdwrBoB> pvcreate
+[01:23] <jmg> HrdwrBoB: see pastebin
+[01:23] <jdong> jmg: IIRC it is required for PV's to be picked up automatically
+[01:23] <jmg> http://pastebin.ca/270022
+[01:23] <HrdwrBoB>  jdong negative
+[01:23] <HrdwrBoB> I have no partitions on my array, works fine
+[01:24] <jmg> jdong: and anyway
+[01:24] <jmg> /dev/sda3 : start= 12578895, size=475813170, Id=8e
+[01:25] <jdong> jmg: does pvdisplay show anything?
+[01:25] <jmg> in the strace of pvscan i can see it reading the lvm tag off the partition, yet it doesnt work
+[01:25] <jmg> jdong: null
+[01:25] <jdong> hmm
+[01:25] <jmg> jdong: if i do it on console it shows "File descriptor 6 left open"
+[01:26] <jmg> note that this box has been dist-upgraded from dapper to edgy
+[01:29] <jdong> strange
+[01:29] <jmg> very
+[01:29] <jdong> should I be breathing a sigh of relief that I didn't dist-upgrade my LVM server to edgy?
+[01:29] <jmg> perhaps
+[01:29] <HrdwrBoB> I haven't upgraded any servers to edgy
+[01:29] <jmg> i wanted to try chuck's xen packages
+[01:32] <rmjb> hello, anyone knows what a driver should build-depend on? I have kernel-package in there, but pbuilder complains about not finding the /lib/modules/2.6.17-10-generic/build directory
+[01:33] <jdong> rmjb: some sort of linux-headers?
+[01:33] <jdong> rmjb: I guess look at how linux-restricted-modules is done
+[01:34] <rmjb> there's no generic headers then...
+[01:34] <jdong> no generic headers?
+[01:34] <rmjb> I mean one that's not specific to an arch
+[01:34] <jdong> l-r-m builds against all
+[01:35] <jdong> a control.in.in generates it
+[01:35] <jdong> I think
+=== zul [n=chuck@CPE0006258ec6c1-CM000a73655d0e.cpe.net.cable.rogers.com]  has joined #ubuntu-devel
+=== chuck_ [n=bob@CPE0006258ec6c1-CM000a73655d0e.cpe.net.cable.rogers.com]  has joined #ubuntu-devel
+[01:36] <rmjb> I am definitely in way over my head
+=== chuck_ [n=bob@CPE0006258ec6c1-CM000a73655d0e.cpe.net.cable.rogers.com]  has joined #ubuntu-devel
+=== TomB_ [n=tomb@host81-152-42-42.range81-152.btcentralplus.com]  has joined #ubuntu-devel
+[01:42] <jmg> ok
+[01:42] <jmg> i downgraded lvm2 to the package from dapper
+[01:43] <jmg> http://pastebin.ca/270037
+[01:43] <jmg> hmm
+[01:43] <jmg> evms...
+=== minghua [n=minghua@ubuntu/member/minghua]  has joined #ubuntu-devel
+[01:51] <jmg> heh
+=== fernando [n=fernando@unaffiliated/musb]  has joined #ubuntu-devel
+=== jack_wyt [n=jack@211.154.174.45]  has joined #ubuntu-devel
+=== oyzi [n=oyzi@c-ac42e255.434-1-64736c11.cust.bredbandsbolaget.se]  has joined #ubuntu-devel
+=== jack_wyt [n=jack@211.154.174.45]  has joined #ubuntu-devel
+=== oyzi [n=oyzi@c-ac42e255.434-1-64736c11.cust.bredbandsbolaget.se]  has left #ubuntu-devel ["Ex-Chat"] 
+=== sevrin [n=sevrin@202.75.186.154]  has joined #ubuntu-devel
+[02:24] <holycow> jdong, are you around?
+[02:25] <holycow> i have a question about the possibility of  backporting nforce drivers to dapper
+[02:25] <jdong> holycow: yes I am
+[02:25] <holycow> hi btw
+[02:25] <jdong> what nforce drivers?
+[02:25] <holycow> the open source drivers that i understand are in the kernel
+[02:26] <jdong> in the kernel?
+[02:26] <jdong> I don't handle that. --> #ubuntu-kernel
+[02:26] <holycow> well i don't know if they are modules or built in, i presume modules
+[02:26] <holycow> oh okay at least i get closer 
+[02:26] <holycow> thanks jdong
+[02:26] <jdong> holycow: np, good luck :)
+[02:26] <holycow> :)
+=== Burgundavia [n=corey@S0106000fb085cc63.gv.shawcable.net]  has joined #ubuntu-devel
+[02:29] <alex-weej> does anyone know if i can safely mount a disk image (read-only) that is actively being written to?
+[02:30] <jdong> alex-weej: no
+[02:31] <alex-weej> is that a "i know, and the answer is no"
+[02:31] <alex-weej> or a "no i don't know"?
+=== fnordus [n=dnall@24.85.128.203]  has joined #ubuntu-devel
+[02:31] <jdong> (1) read-only is not always taken so literally. ext3 actually does a JOURNAL PLAYBACK when you mount it ro :)
+[02:31] <alex-weej> o_0
+[02:31] <bluefoxicy> o.O
+[02:31] <jdong> (2) If significant structures change while you're reading, you'll get a kernel panic or oops
+[02:31] <jdong> I have experienced both
+[02:31] <alex-weej> heh
+[02:31] <alex-weej> ok
+[02:31] <jdong> I am the authority on doing crackful things
+[02:31] <jdong> :)
+[02:32] <bluefoxicy> jdong:  most drivers will rework it and remount ro or just umount
+[02:32] <bluefoxicy> for file system being ass
+[02:32] <jdong> bluefoxicy: in theory :)
+[02:32] <alex-weej> dd_rhelp is really struggling on the last few MB of this disk
+[02:32] <bluefoxicy> yes
+[02:32] <bluefoxicy> that theory is "Faulty hardware means we try to back off safely"
+[02:32] <jdong> bluefoxicy: I've panicked ext3 with -o errors=remount-ro before
+[02:32] <bluefoxicy> I'm aware the reality can be "Let's do a BSOD"
+[02:32] <jdong> bluefoxicy: that's from xen and my system both mounting a disk
+[02:33] <bluefoxicy> XD
+[02:33] <jdong> so alex-weej, either momentarily stop dd-rhelp or wait on mounting :)
+[02:33] <jdong> and make sure you mount a COPY
+[02:33] <jdong> not the original backup image
+[02:33] <jdong> because as I've said, a simple ro mount can change the image
+[02:33] <alex-weej> yeah i'm gonna
+[02:33] <alex-weej> copying a 108 GB image is going to take a while
+[02:34] <jdong> :)
+[02:34] <jdong> the sweet sound of hard disk failure
+=== jdong knows that sound too well
+=== alex-weej too now
+[02:34] <jdong> from that first click-click-click to the spindown :)
+[02:34] <jdong> lol
+[02:34] <alex-weej> it's done pretty well tbh
+[02:34] <alex-weej> - Biggest hole size :  800 k - total holes : 4656.0k
+[02:34] <alex-weej> - xferd(succ/err) : 116161327.5k(116161195.5k/132.0k)
+[02:34] <wasabi> Sure wish OCFS2's module was in the -generic kernel. =/
+[02:35] <wasabi> so i could play with it
+[02:35] <jdong> alex-weej: that's very good
+[02:35] <jdong> alex-weej: a helluva lot better than I've ever done
+[02:35] <alex-weej> taken me 6 hours
+[02:35] <jdong> alex-weej: you caught that failure early
+[02:35] <jdong> or you're just lucky
+[02:36] <alex-weej> oop it's off again
+[02:36] <alex-weej> - Biggest hole size :  736 k - total holes : 4212.0k
+[02:36] <alex-weej> - xferd(succ/err) : 116161771.5k(116161635.5k/136.0k)
+[02:36] <alex-weej> :D
+[02:36] <alex-weej> still lost 4k though :(
+[02:36] <alex-weej> do you know if that "err" bit is totally dead disk?
+[02:37] <alex-weej> i might leave it going overnight see how well it is when i wake up
+[02:37] <jdong> alex-weej: the err is how many blocks dd_rescue (not dd_rhelp!) stumbled on
+[02:37] <jdong> alex-weej: when dd_rescue stumbles, dd_rhelp helps dd_rescue fast-forward a bit
+[02:37] <jdong> alex-weej: so in reality succ/err is pretty nonsensical
+[02:37] <jdong> alex-weej: it's the hole sizes that you need to worry about :)
+[02:37] <jdong> alex-weej: I hope that's ext2/3, btw
+[02:38] <alex-weej> yeah, why?
+[02:38] <jdong> alex-weej: for the recovery ;-)
+[02:38] <alex-weej> you think i should make a copy then fsck it?
+[02:38] <jdong> alex-weej: a lot of the other filesystems have a good deal of "magic metadata" that if lost means a good chunk of the structure disappears (!)
+[02:38] <jdong> alex-weej: you should absolutely make a copy of it
+[02:38] <jdong> fscking it is a good start
+[02:38] <alex-weej> uh oh
+[02:39] <alex-weej> don't like the sound of it being a "good start"
+[02:39] <alex-weej> i've put like a whole evening into this already lol
+[02:39] <jdong> well
+[02:39] <jdong> fsck isn't always failproof
+[02:39] <jdong> it can either
+[02:39] <jdong> (1) Die / core-dump in the middle of repairing
+[02:39] <jdong> (2) Give up and start slashing inode entries until you're left with 2 files
+[02:39] <jdong> and then call it "clean" :D
+[02:40] <alex-weej> :|
+[02:40] <jdong> just hope that neither happens :)
+[02:40] <alex-weej> btw
+[02:40] <alex-weej> if i just mount a copy
+[02:40] <alex-weej> without fsking
+=== _TomB [n=ownthebo@host81-152-42-42.range81-152.btcentralplus.com]  has joined #ubuntu-devel
+[02:40] <jdong> sure, you can try that
+[02:40] <alex-weej> if i try and copy files off will i get potentially corrupt files or is there some sort of checksumming in effect?
+[02:40] <jdong> though there's a possibility a good chunk of directories are not available
+[02:41] <jdong> i.e. you get an IO Error or Operation Not Permitted trying to enter a directory
+[02:41] <alex-weej> hmm
+[02:41] <alex-weej> i'm curious
+[02:41] <jdong> depends on whether or not any of that 4000K is filesystem metadata
+[02:41] <jdong> which I'm betting at least a bit of it is :-/
+[02:41] <jdong> you can try it
+[02:41] <jdong> hence the point of the "copy" :)
+[02:41] <alex-weej> reckon i can hot copy the image that is being written to?
+[02:42] <alex-weej> it's not easy to pause this thing
+[02:42] <alex-weej> it's blocking like a bitch
+[02:42] <alex-weej> and it's uninterruptable 
+[02:44] <jdong> yeah, IO Errors block :)
+=== Gman [i=gman@nat/sun/x-ca54aa4907f8b2e7]  has joined #ubuntu-devel
+[02:44] <jdong> look who didn't build a preemptible kernel
+[02:44] <jdong> (j/k :D)
+[02:45] <alex-weej> what would that have done?
+[02:45] <jdong> given you a much better chance of interrupting the process :)
+[02:46] <alex-weej> blaeh
+=== WaterSevenUb [n=WaterSev@c-65-96-188-198.hsd1.ma.comcast.net]  has joined #ubuntu-devel
+=== esaym [n=esaym@cpe-24-162-149-45.hot.res.rr.com]  has joined #ubuntu-devel
+[03:02] <alex-weej> seriously i ctrl+c'd this process about 5 minutes ago
+[03:02] <alex-weej> damnit
+=== dilinger [n=dilinger@24.128.243.228]  has joined #ubuntu-devel
+=== stefg [n=chatzill@dslb-088-072-215-076.pools.arcor-ip.net]  has joined #ubuntu-devel
+=== j_ack [n=rudi@p508DA117.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== zenrox [n=zenrox@pool-71-115-219-183.spknwa.dsl-w.verizon.net]  has joined #ubuntu-devel
+=== cr3 [n=marc@pdpc/supporter/bronze/cr3]  has joined #ubuntu-devel
+=== spacey [n=herman@ubuntu/member/spacey]  has joined #ubuntu-devel
+=== shenki_ [n=shenki@150.101.72.85]  has joined #ubuntu-devel
+=== doko_ [n=doko@dslb-088-073-097-055.pools.arcor-ip.net]  has joined #ubuntu-devel
+=== zul_ [n=chuck@CPE0006258ec6c1-CM000a73655d0e.cpe.net.cable.rogers.com]  has joined #ubuntu-devel
+=== tonyyserver [n=anthony@d235-240-148.home1.cgocable.net]  has joined #ubuntu-devel
+=== tonyyserver [n=anthony@d235-240-148.home1.cgocable.net]  has joined #ubuntu-devel
+=== tonyyserver [n=anthony@d235-240-148.home1.cgocable.net]  has joined #ubuntu-devel
+=== dous_ [n=dous@124.104.0.197]  has joined #ubuntu-devel
+=== dous_ [n=dous@124.104.0.197]  has joined #ubuntu-devel
+=== hunger_ [n=tobias@p54A7258E.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== abattoir [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+=== mgalvin [n=mgalvin@ubuntu/member/mgalvin]  has joined #ubuntu-devel
+=== mneptok [n=mneptok@montreal.canonical.com]  has joined #ubuntu-devel
+=== cr3 [n=marc@pdpc/supporter/bronze/cr3]  has joined #ubuntu-devel
+=== bronson [n=bronson@adsl-75-36-147-248.dsl.pltn13.sbcglobal.net]  has joined #ubuntu-devel
+=== nags [n=nags@125.16.129.16]  has joined #ubuntu-devel
+=== Burgundavia [n=corey@ubuntu/member/burgundavia]  has joined #ubuntu-devel
+=== abattoir [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+=== quail [n=quail@unaffiliated/quaillinux/x-000001]  has joined #ubuntu-devel
+=== fnordus [n=dnall@24.85.128.203]  has joined #ubuntu-devel
+=== quail [n=quail@unaffiliated/quaillinux/x-000001]  has joined #ubuntu-devel
+=== seaLne [n=seaLne@ubuntu/member/sealne]  has joined #ubuntu-devel
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+=== jdong_ [n=jdong@d192-24-18-234.col.wideopenwest.com]  has joined #ubuntu-devel
+=== Catshrimp [n=blfisher@64.108.5.134]  has joined #ubuntu-devel
+=== Catshrimp [n=blfisher@64.108.5.134]  has left #ubuntu-devel [] 
+=== cjwatson [n=cjwatson@82-69-40-219.dsl.in-addr.zen.co.uk]  has joined #ubuntu-devel
+=== jack_wyt [n=jack@211.154.174.45]  has joined #ubuntu-devel
+[06:27] <bluefoxicy> oh hell yes
+[06:28] <bluefoxicy> libFLAC 1.1.3 is out, and no GNU_STACK
+[06:28] <bluefoxicy> I submitted the changes for that a while back <3
+[06:29] <bluefoxicy> (well it's there on PPC but not on IA-32)
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+=== lguerra [n=lguerra@201.244.24.223]  has joined #ubuntu-devel
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+[06:37] <twb> I wish to file a wishlist bug against the USN (Ubuntu Security Notice) process.  What is the name of the pseudopackage?
+[06:38] <Treenaks> twb: what's the bug? :)
+[06:38] <twb> http://twb.ath.cx/tmp/tmp.txt
+[06:39] <twb> Treenaks: DSEs have a little summary header like that at the top of each message.
+[06:39] <twb> I'd like USNs to do likewise.
+=== j_ack_ [n=rudi@p508D897F.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+[06:40] <twb> For example if it says "Problem type: remote", I upgrade *immediately* and then read the rest of the message.  If it says "Problem type: local", I don't rush so much.
+=== didymo [n=ashley@61.9.197.223]  has joined #ubuntu-devel
+[06:41] <Treenaks> I just always run upgrade-cluster.sh :)
+[06:42] <Treenaks> not that it's really a cluster.. but it upgrades all machines I'm a sysadmin for
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+[06:49] <keescook> twb: I've been thinking about adding something like that.  However, I worry about serious issues getting ignored due to those classifications, though.  for example, the tar USN would have "local", but there are plenty of websites that automatically process tar files, so really it's remote vuln for them...
+=== haggai [n=halls@credativ.bcnadsl.com]  has joined #ubuntu-devel
+[06:53] <twb> keescook: I suppose...
+[06:54] <keescook> twb: but, I agree: it'd be nice to have a little something more.  :)
+[06:55] <Burgundavia> keescook: see what secunia puts out. Is quite good
+[06:55] <Burgundavia> they also rate the vuln, which is fairly useful, if a little arbitrary
+[06:55] <infinity> Any rating between "minor" and "critical" is pretty useless, IMO.
+[06:55] <keescook> yeah, I like secunia's stuff.  :)
+[06:56] <keescook> hey infinity!  :)
+[06:56] <infinity> "This is something only a pedant will care about" versus "Jumping Judas, update your system yesterday."
+[06:56] <keescook> heh
+[06:56] <infinity> Any in between is so arbitrary that it's worthless, which makes the whole system of ratings somewhat worthless.
+[06:57] <infinity> "Well, this could be sort of bad, on a Tuesday, if you're downloading porn."
+[06:57] <Burgundavia> however, there are vulns which are worse than others
+[06:58] <infinity> There are.  remote/local, root/not, should be enough for most people to decide on their own.
+[06:58] <infinity> Too many factors on the local machine to say beyond that what's "bad" and what's not.
+[06:58] <infinity> I may be some SELinux freak who doesn't even care about privilege escalation, or I may be a bank behind 4000 firewalls who doesn't care about remote vulns, etc.
+[06:59] <infinity> Or, other considerations, like things that rely on poor user habits would be "no big deal" to me, but a huge deal to a corporation full of "regular users".
+[06:59] <Burgundavia> yep
+[06:59] <infinity> And on it goes.
+[07:02] <infinity> Now, we *could* rate vulns based on the potential for humour.
+[07:02] <infinity> "If your friends are caught by this one, you can TOTALLY point and laugh."
+[07:03] <Burgundavia> humour value: 4.3 (likely to be activating while browsing goat porn)
+[07:06] <twb> Bah.  I use wget for all my goat porn.
+[07:06] <twb> I'd like to see someone manage a js exploit in that!
+[07:07] <Burgundavia> hmm, I saw a wget exploit awhile back
+=== nixternal [n=nixterna@ubuntu/member/nixternal]  has joined #ubuntu-devel
+=== Burgundavia [n=corey@ubuntu/member/burgundavia]  has joined #ubuntu-devel
+=== robitaille [n=daniel@ubuntu/member/robitaille]  has joined #ubuntu-devel
+=== timfrost [n=timfrost@125-238-33-97.broadband-telecom.global-gateway.net.nz]  has joined #ubuntu-devel
+=== Amaranth [n=travis@ubuntu/member/amaranth]  has joined #ubuntu-devel
+=== jack_wyt [n=jack@211.154.174.45]  has joined #ubuntu-devel
+=== lucas [n=lucas@ubuntu/member/lucas]  has joined #ubuntu-devel
+=== marilize [n=marilize@196.36.161.235]  has joined #ubuntu-devel
+=== ArwynH [n=arwyn@PPPf184.saitama-ip.dti.ne.jp]  has joined #ubuntu-devel
+=== pitti [n=pitti@ubuntu/member/pitti]  has joined #ubuntu-devel
+=== pitti [n=pitti@ubuntu/member/pitti]  has joined #ubuntu-devel
+[08:06] <pitti> Good morning
+=== dade` [n=dade@nectarine/admin/dade]  has joined #ubuntu-devel
+[08:11] <doko> infinity: apache2 and subversion syncs (subversion is assigned to me, but I would need apache2 first)
+[08:11] <infinity> doko: apache2 is on my list of "things I'm going to be careful about, but I promise to get it done this week before I go on VAC"
+[08:12] <infinity> doko: You can either leave SVN to me (which should be simple enough), or do it after I get apache2 happy.
+[08:12] <infinity> Part of "making apache2 happy" includes a mess of "getting modules happy", I suspect, so perhaps best to leave SVN to me too.
+[08:12] <doko> ok
+=== astopy [n=adam@taurus.moosoft.net]  has joined #ubuntu-devel
+=== tsmithe` [n=bip@82-70-109-22.dsl.in-addr.zen.co.uk]  has joined #ubuntu-devel
+=== human_blip [n=mike@220.157.65.29]  has joined #ubuntu-devel
+=== stub [n=stub@ppp-58.8.7.203.revip2.asianet.co.th]  has joined #ubuntu-devel
+=== bronson [n=bronson@adsl-75-36-147-248.dsl.pltn13.sbcglobal.net]  has joined #ubuntu-devel
+=== Lure [n=lure@external-7.hermes.si]  has joined #ubuntu-devel
+[08:36] <infinity> Uhm, since when is python marked Essential: yes
+[08:36] <infinity> ?
+[08:36] <infinity> doko: Do you know about the above?
+[08:38] <pitti> hmm, not for me...
+[08:38] <pitti> only -minimal
+[08:38] <infinity> Which is also pretty sketchy.
+[08:38] <infinity> But here, it's Essential.
+[08:39] <pitti> but wasn't -minimal specifically introduced to become an essential package?
+[08:39] <infinity> No
+[08:39] <pitti> ('yay for writing postinst scripts in python' or so?)
+[08:39] <infinity> minimal has all sorts of stuff in it that doesn't qualify as "Essential", as far as Debian policy would define it.
+[08:40] <infinity> Oh, we're talking about two different "minimals" :)
+[08:40] <twb> Well, Ubuntu doesn't stick to the Debian policy.
+[08:40] <infinity> python-minimal is also not Essential, however.
+[08:40] <infinity> twb: Name one are where we don't.
+=== minghua [n=minghua@ubuntu/member/minghua]  has joined #ubuntu-devel
+[08:40] <infinity> s/are/area/
+[08:41] <twb> infinity: invariant sections of GFDL docs?
+[08:41] <infinity> twb: That's not Policy, that's DFSG.
+[08:41] <twb> Well, I assumed policy said something like `only DFSG in main'.
+[08:41] <infinity> Debian Policy is about packaging, not politics.
+[08:42] <infinity> And we adhere to it as best we can, or the world explodes.
+[08:42] <doko> infinity: hmm, yes, looking at it; the essential attribute was dropped in my last update
+[08:42] <infinity> pitti: python-minimal is Priority: Required, python somehow ended up Essential: yes recently.
+[08:42] <pitti> infinity: ok, my package index is from yesterday still
+[08:42] <infinity> doko: As in, one you just uploaded, or one you're about to?
+=== pitti is at ISDN ATM, network broken once again
+[08:43] <twb> Section 2.2.1, "Every package in _main_ must comply with the DFSG (Debian Free Software Guidelines)."
+[08:43] <doko> infinity: 2.4.4-1ubuntu1
+[08:43] <twb> Ubuntu concretely does not follow that part of the policy w.r.t. tar-doc, which has invariant sections.
+[08:43] <infinity> twb: Okay, fine, we don't adhere to 2.2.1 (or, you could argue that we read the DFSG differently from Debian)
+[08:44] <infinity> twb: Point taken, though.  We don't adhere to Policy 100%.  That doesn't mean we ignore it.
+[08:44] <twb> I'm not implying that Ubuntu not sticking to Debian policy is a *bad* thing; merely that it is *a* thing.
+[08:44] <infinity> (base)adconrad@cthulhu:~$ apt-cache show python | egrep "^Version|^Essential"
+[08:44] <infinity> Essential: yes
+[08:44] <infinity> doko: ^^^
+[08:44] <infinity> Version: 2.4.4-1ubuntu1
+[08:45] <infinity> doko: Source agrees with me too.
+[08:46] <twb> infinity: fyi, this is shorter
+[08:46] <twb> grep-available -s Package,Essential,Version -X -P python
+[08:47] <infinity> twb: You're assuming I have dctrl-tools available on that machine.
+[08:47] <twb> Sure.
+[08:48] <infinity> (Also, I know)
+[08:48] <twb> Good-o.
+[08:48] <doko> infinity: apt-cache show python-minimal|grep Ess
+[08:48] <infinity> doko: python.  Not minimal.
+[08:48] <doko> python shouldn't be essential
+[08:48] <infinity> doko: I agree. :)
+[08:49] <infinity> doko: The source does not.
+=== dholbach [n=daniel@i59F71381.versanet.de]  has joined #ubuntu-devel
+=== infinity wonders if this is the point where he stops talking and just uploads.
+[08:52] <StevenK> infinity: Thanks for punting wlassistant to -updates.
+[08:52] <infinity> StevenK: Cheers.
+[08:52] <dholbach> good morning
+[08:52] <_ion> Hi dholbach
+[08:53] <dholbach> heya _ion
+[08:53] <infinity> doko: Are we talking past each other, or did you just have another look at python-defaults' debian/control and realise what I'm talking about? :)
+=== Keybuk [n=scott@quest.netsplit.com]  has joined #ubuntu-devel
+[08:54] <_ion> dholbach: Please take a look at bug 74698.
+[08:54] <Ubugtu> Malone bug 74698 in ubuntu-artwork "Wrong gconf defaults for wallpaper" [Undecided,Unconfirmed]  http://launchpad.net/bugs/74698
+=== dade` [n=dade@nectarine/admin/dade]  has joined #ubuntu-devel
+[08:54] <dholbach> _ion: thanks
+[08:55] <infinity> twb: As for the Policy discussion, except for very rare political exceptions (like the DFSG thing, for instance), we *do* stick to Debian Policy, and not doing so would very much be a bad thing.
+=== seb128_ [n=seb128@ANancy-151-1-103-133.w90-13.abo.wanadoo.fr]  has joined #ubuntu-devel
+[08:55] <twb> Granted.
+[08:55] <infinity> twb: And if you feel like discussing it further, you're welcome to take me to Blue Fire Grill and convince me further.
+[08:55] <infinity> PS: I'm hungry.
+[08:55] <doko> infinity: ? the source never was essential afaik
+=== twb just had vindaloo
+[08:56] <infinity> Feed your archive admin, lest he become cranky.
+[08:56] <dholbach> hey seb128, hey doko, hey infinity :)
+[08:56] <seb128> hi dholbach
+[08:56] <infinity> doko: From the current python-defaults debian/control:
+[08:56] <infinity> Package: python
+[08:56] <infinity> Architecture: all
+[08:56] <infinity> Essential: yes
+[08:56] <infinity> Priority: required
+[08:57] <doko> infinity: yes, that's the binary
+=== mvo [n=egon@i59F71381.versanet.de]  has joined #ubuntu-devel
+[08:57] <infinity> Err, yes.  Yes it is.
+[08:57] <infinity> I meant "check the source, it's not fixed"
+[08:58] <infinity> You claimed "python" was no longer marked Essential in that version.
+[08:58] <infinity> Or, as I suspect, we're talking past each other.
+=== slomo [n=slomo@ubuntu/member/slomo]  has joined #ubuntu-devel
+=== ompaul [n=ompaul@gnewsense/friend/ompaul]  has joined #ubuntu-devel
+=== Gman [i=gman@nat/sun/x-930f83943f4d6900]  has joined #ubuntu-devel
+[09:03] <twb> I want to create patches for `casper' in a way that is easiest for the Ubuntu maintainer to integrate.  I suspect this means branching the bzr trunk (and registering the branch with launchpad?)  Is there a tutorial document to walk me through this process?
+=== hunger_ [n=tobias@pd95b0676.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== viviersf [n=cain@196.44.1.98]  has joined #ubuntu-devel
+=== hunger_ [n=tobias@pd95b0676.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== Eons [n=Eons@host-84-221-208-136.cust-adsl.tiscali.it]  has joined #ubuntu-devel
+=== ivoks [n=ivoks@161.53.50.54]  has joined #ubuntu-devel
+=== apokryphos [n=apokryph@87-194-86-227.bethere.co.uk]  has joined #ubuntu-devel
+=== dade` [n=dade@nectarine/admin/dade]  has left #ubuntu-devel [] 
+=== dade` [n=dade@nectarine/admin/dade]  has joined #ubuntu-devel
+[09:16] <cjwatson> twb: https://wiki.ubuntu.com/BzrContributorHowto
+[09:16] <twb> Thanks.
+=== raphink [n=raphink@ubuntu/member/raphink]  has joined #ubuntu-devel
+[09:17] <Mithrandir> twb: actually, what would be easiest for me is if you take the Ubuntu branch and merge each debian feature on its own branch so I can pick & choose.
+[09:17] <twb> On its own branch, eh?
+[09:18] <Mithrandir> yeah, so since you're interested in the NFS support and such, just merge the bits relevant to that.
+[09:18] <Mithrandir> (on one branche9
+[09:18] <twb> Yeah
+[09:18] <Mithrandir> s/e9/)/
+[09:18] <twb> I should also mention that I'm used to darcs, not bzr.
+=== ivoks_ [n=ivoks@36-204.dsl.iskon.hr]  has joined #ubuntu-devel
+[09:20] <twb> BTW, I notice the edgy .orig.tar.gz has a .bzr in it.  IIRC that's against policy.
+[09:20] <cjwatson> that's a longstanding debate :)
+[09:21] <twb> OK.
+[09:21] <cjwatson> I don't believe policy specifies; feel free to cite chapter and verse if I missed it
+[09:21] <cjwatson> and I avoid it in my own packages, but Mithrandir likes it that way ...
+[09:21] <Mithrandir> twb: .bzr directories are useful to random people, unlike .svn or CVS directories.
+[09:23] <hunger> Would it be possible to stop the new sun-java5-plugin deb to require an /usr/lib/iceweasel/plugins dir to create symlinks in? That does not exist in ubuntu (yet?).
+[09:23] <cjwatson> hunger: there's no harm in packages providing hooks for extra browsers
+[09:24] <cjwatson> my mozilla-nukeimage package provides hooks for a big pile of browsers that won't be installed. I think that's fine - harmless and easier than divergence
+[09:24] <hunger> cjwatson: Sure, but then it should check for the existance of that dir before failing in the postinst script.
+[09:24] <cjwatson> hunger: oh, it should just ship it in the .deb
+[09:24] <cjwatson> the directory
+[09:24] <cjwatson> that's a bug
+[09:24] <hunger> cjwatson: Yes, that is an option, too:-)
+[09:24] <cjwatson> that's the correct option
+[09:25] <cjwatson> otherwise it breaks on Debian if installed before iceweasel
+[09:25] <twb> Mithrandir: incidentally, you may be interested in this little script: http://twb.ath.cx/~twb/canon/transmuter/transmute.html
+[09:25] <ajmitch> hunger: already filed as bug 74621
+[09:25] <Ubugtu> Malone bug 74621 in sun-java5 "[Feisty] sun-java5-plug fails to install" [Undecided,In progress]  http://launchpad.net/bugs/74621
+[09:26] <hunger> ajmitch: Great!
+=== Fujitsu [n=william@c58-107-164-24.eburwd7.vic.optusnet.com.au]  has joined #ubuntu-devel
+=== lloydinho_ [n=andreas@rosinante.egmont-kol.dk]  has joined #ubuntu-devel
+[09:29] <twb> Cool, I can correct typos in bug reports!
+[09:29] <twb> (incf malone)
+[09:30] <pitti> twb: you can change the description, but not comments
+[09:31] <twb> Yeah.
+=== alex-weej [n=alex@halls-129-31-82-59.hor.ic.ac.uk]  has joined #ubuntu-devel
+=== orion2012 [n=orion@hypnogogic.org]  has joined #ubuntu-devel
+[09:33] <Mithrandir> twb: nice.
+[09:34] <twb> Mithrandir: examples in http://twb.ath.cx/~twb/canon/transmuter-examples/
+[09:34] <Mithrandir> twb: I'm in a meeting right now, but I'll look at it once that's finished
+[09:35] <twb> The coolest part is you say
+[09:35] <twb> transmute --inspect --from ubuntu-desktop-6.10.iso
+[09:35] <twb> and you get dropped into it, as if the .iso was just a chroot dir.
+[09:35] <twb> Righto.
+[09:35] <Mithrandir> that looks really useful; for me as a developer too
+=== somian [i=somian@ny-lasalle-69-162-218-24.bflony.adelphia.net]  has joined #ubuntu-devel
+=== somian [i=somian@ny-lasalle-69-162-218-24.bflony.adelphia.net]  has left #ubuntu-devel [] 
+[09:47] <cjwatson> I've been looking for something like that for a long time
+[09:47] <twb> It's actually the third version.
+[09:47] <twb> The previous two were far nastier.
+[09:49] <twb> So when I file a bug via email, I put `affects /distros/ubuntu/PACKAGE', where PACKAGE is the name of the package?
+[09:49] <Mithrandir> I've been doing those kinds of things by hand, which gets tiresome after a while
+=== malcc [n=malcolm@host86-135-237-55.range86-135.btcentralplus.com]  has joined #ubuntu-devel
+[09:53] <cjwatson> twb: yes
+[09:55] <twb> OK.
+[09:57] <Keybuk> pitti: libnss-mdns upgrade worked that time
+[09:57] <pitti> Keybuk: great, thanks for confirming
+[09:59] <jdub> $ ping stanley.local
+[09:59] <jdub> PING stanley.local (172.16.254.1) 56(84) bytes of data.
+[09:59] <jdub> Lathiat: ^ avahi getting my vmnet address :)
+[10:00] <iwj> seb128: `Breaks' as far as apt is concerned is there to cause upgrade of the broken package.  Is that not what you wanted ?
+[10:00] <Keybuk> pitti: my weird behaviour now is that avahi announces the wrong IP address
+[10:00] <Keybuk> in fact, avahi announces my vmnet8 IP, which is perhaps the least useful one it could have picked
+[10:00] <pitti> urgh
+[10:00] <pitti> Keybuk: same problem that jdub has apparently
+[10:00] <seb128> iwj: well, what if the new package is not available yet?
+=== rraphink [n=raphink@ubuntu/member/raphink]  has joined #ubuntu-devel
+[10:01] <seb128> iwj: like evolution-data-server 1.9 Breaks evolution << 2.9
+[10:01] <iwj> seb128: Then apt will hold back the breaking package.
+[10:01] <seb128> and e-d-s was available before new evo
+[10:01] <seb128> ok
+[10:01] <seb128> so I did the updates on my box
+[10:01] <seb128> packaged e-d-s first
+[10:01] <iwj> If you dpkg -i it then it deconfigures the broken package and apt is too lame to cope.
+[10:01] <seb128> dpkg -i *.deb for it
+[10:01] <seb128> and from that point apt was stucked
+[10:01] <seb128> I had to dpkg -r evolution
+[10:01] <iwj> But there's nothing fundamentally wrong.
+[10:02] <iwj> Right, that's a fine workaround.
+[10:02] <seb128> I somewhat think that apt should manage and keep working
+[10:02] <iwj> Or --configure --force-depends if you prefer.
+[10:03] <iwj> seb128: Yes, it should.  But it's fundamental to apt's design that it can't ignore some problem even if you don't want it fixed and it can't fix it.
+[10:03] <Keybuk> pitti: I would have thought the IP it announced would depend on the interface that the MDNS packet was received on?
+[10:03] <mvo> iwj: right. part of apts design is that the system shouldn't be broken
+[10:03] <pitti> Keybuk: that's what I would expect as well, and so far it worked fine with my experiments
+[10:03] <mvo> I don't think there is anything wrong with this
+[10:04] <pitti> Keybuk: seems that the vmnet ones confuse avahi; I'll talk to lennart about this
+[10:04] <seb128> iwj: ok, I was expecting it doing the same as for Conflicts, i.e: remove evolution on "apt-get -f install" to "fix" the situation
+[10:04] <iwj> But that doesn't fix it of course.
+[10:04] <Keybuk> pitti: with those up, I can't even look up the address from another machine
+[10:04] <Keybuk> (I assume the replies get lost?)
+[10:04] <seb128> well, that allows apt to work again
+[10:05] <seb128> instead of focussing on the Breaks it can't resolve
+[10:05] <pitti> Keybuk: sounds like it
+[10:05] <Keybuk> actually, I can't seem to look it up anyway
+[10:05] <pitti> Keybuk: the other machine runs avahi as well?
+[10:05] <Keybuk> yes
+[10:05] <pitti> Keybuk: avahi-discovery is quite handy for that, btw
+[10:05] <seb128> iwj: anyway, no big deal, that happened only because I dpkg -i the package using Break on my box, will not happen to users
+[10:05] <Keybuk> pitti: example?
+[10:05] <pitti> if you see the other machine appear, DNS should work
+[10:05] <iwj> seb128: Right.
+[10:05] <pitti> Keybuk: example? it's  just a gui that displays what avahi knows
+[10:06] <pitti> Keybuk: btw, if you try this on powerpc, avahi seems to be seriously broken on ppc ATM
+[10:06] <Keybuk> avahi-discover on the desktop (edgy) shows itself and my laptop (feisty)
+[10:06] <pitti> s/seems to be/is/
+[10:06] <Keybuk> avahi-discover on the laptop (feisty) only shows itself
+[10:07] <Keybuk> both of them say "Timeout reached" if I click the laptop
+[10:07] <iwj> mvo: No, apt demands that the package state database doesn't record that the system is broken.  (Eg, it is happy that the system fails to have evolution installed when the user wanted it, but not happy if the database records that evolution is there but not working.)
+[10:07] <pitti> Keybuk: (later, after discussion in meeting)
+[10:07] <iwj> And in fact apt is willing to break the system further in order to make the status database prettier.
+[10:07] <iwj> But perhaps this is more of a rant for a bar somewhere :-).
+[10:08] <mvo> iwj: I see your point, but from a user perspective it dosn't matter IMHO if its not working because it is not there or not working because it is there but not working :)
+[10:09] <iwj> mvo: Well, yes, except that if it's there and not working at least it gets put back and made to work later.
+=== Gman [i=gman@nat/sun/x-26c798ccfbaa5a53]  has joined #ubuntu-devel
+=== hunger [n=tobias@pd95b0676.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== jono [n=jono@ubuntu/member/jono]  has joined #ubuntu-devel
+=== twilight [n=twilight@ubuntu/member/twilight]  has joined #ubuntu-devel
+[10:13] <_ion> Re: the discussion at -meeting, perhaps there should be a GUI program specifically made to be run if there's <N MiB of free space in /home. *dm would start that application instead of the normal desktop session in that situation. The app would suggest things that could be deleted, and you could start a terminal from that app.
+=== mdke [n=matt@85-210-195-200.dsl.pipex.com]  has joined #ubuntu-devel
+[10:14] <_ion> It would list .xsession-errors among the suggestions for things to be deleted if its size exceeds some sane value.
+[10:15] <Keybuk> 09:15:56.944097 IP (tos 0x0, ttl 255, id 0, offset 0, flags [DF] , length: 57) syndicate.netsplit.com.5353 > 224.0.0.251.5353: [udp sum ok]   0 A? quest.local. (29)
+[10:15] <Keybuk> 09:15:56.944648 IP (tos 0x0, ttl 255, id 0, offset 0, flags [DF] , length: 67) quest.netsplit.com.5353 > 224.0.0.251.5353: [udp sum ok]   0*- [0q]  1/0/0 quest.local. (Cache flush) A quest.netsplit.com (39)
+[10:15] <Keybuk> hmm
+[10:16] <Keybuk> I see that on all three sides (quest [desktop] , router, syndicate [laptop
+[10:16] <Keybuk> so it's not a network problem
+[10:17] <doko> infinity, Mithrandir:  the powerpc build of openoffice.org 2.0.4-0ubuntu3 in ubuntu edgy PROPOSED did fail (disk space); please requeue
+[10:18] <infinity> doko: Checking.
+=== Xof [n=mas01cr@158.223.59.22]  has joined #ubuntu-devel
+=== xerxas [n=R67894@AGrenoble-257-1-85-108.w86-219.abo.wanadoo.fr]  has joined #ubuntu-devel
+[10:22] <pitti> infinity: while you're at it, can you please give-back uim? it failed due to gettext 0.15 segfaulting, but now 0.16 is in the archive on all arches
+=== Huahua [n=hua_@122.0.228.85]  has joined #ubuntu-devel
+=== givre [n=Florent@APuteaux-152-1-43-241.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[10:23] <infinity> pitti: Done.
+[10:23] <pitti> cheers
+=== Yagisan [n=Yagisan@doomsday/developer/Yagisan]  has joined #ubuntu-devel
+=== stu1 [n=stub@ppp-58.8.16.86.revip2.asianet.co.th]  has joined #ubuntu-devel
+=== viviersf [n=cain@196.44.1.98]  has joined #ubuntu-devel
+=== Zdra [n=zdra@16.207-241-81.adsl-dyn.isp.belgacom.be]  has joined #ubuntu-devel
+[10:38] <doko> Keybuk, cjwatson: please sync icu from unstable (#71857), needed for the openoffice.org build
+=== Tonio_ [n=tonio@139.8.100-84.rev.gaoland.net]  has joined #ubuntu-devel
+=== realist [n=realist@144.132.81.224]  has joined #ubuntu-devel
+=== tkamppeter [n=till@208.252.119.40]  has joined #ubuntu-devel
+=== ogra [n=ogra@ubuntu/member/ogra]  has joined #ubuntu-devel
+=== _human_blip_away [n=mike@220.157.65.29]  has joined #ubuntu-devel
+=== givre [n=Florent@APuteaux-152-1-43-241.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== Lure [n=lure@external-7.hermes.si]  has joined #ubuntu-devel
+[11:05] <lucas> hi, I plan to resurrect "debian package a day"
+[11:06] <lucas> if you don't want it to be added to planet ubuntu, say it aloud now ;)
+[11:06] <lucas> (posting rate should be of about twice a week)
+[11:06] <ajmitch> a day? :)
+[11:06] <seb128> twice a week, that's not "a day"
+[11:06] <lucas> it was named like that before, so it's better to keep the name
+=== `anthony [n=anthony@220-253-50-204.VIC.netspace.net.au]  has joined #ubuntu-devel
+[11:07] <lucas> and in case of huge success, I won't have to change the name :-)
+[11:07] <seb128> twice a weeks seems fine
+=== ogra just discovered x2x on ltsp ... 5 thin clients make a huge desktop :)
+=== viviersf [n=cain@196.44.1.98]  has joined #ubuntu-devel
+=== cjwatson [n=cjwatson@82-69-40-219.dsl.in-addr.zen.co.uk]  has joined #ubuntu-devel
+=== cassidy [n=cassidy@host-213-189-171-21.brutele.be]  has joined #ubuntu-devel
+=== PuMpErNiCkLe [n=pumperni@about/essy/bacon/PuMpErNiCkLe]  has joined #ubuntu-devel
+[11:15] <siretart> ogra: sunrays even offer xinerama extensions when joining them into a sunray group. that'll be a nifty feature for ltsp as well ;)
+=== siretart is currently sitting in front of such a sunray group
+[11:16] <ogra> siretart, well, first i'D have to get this sunray booting .... got it sitting on my desk since three months now and didnt get more than a hourglass out of it yet
+[11:17] <siretart> ogra: you'll need the sunray server software for that. the guy who managed to get this working in debian sits next room to me ;)
+[11:17] <sivang> morning
+=== TomB_ [n=tomb@host81-152-42-42.range81-152.btcentralplus.com]  has joined #ubuntu-devel
+=== geser [n=michael@dialin107095.justdsl.de]  has joined #ubuntu-devel
+[11:19] <ogra> siretart, i know, but sun was planning to opensource the image they provide for that
+[11:19] <ogra> i'd like to support it directly with ubuntu ltsp
+=== nags [n=nags@125.16.129.16]  has joined #ubuntu-devel
+[11:20] <siretart> ogra: err, what image are you currently talking about?
+[11:20] <siretart> the SRRS?
+[11:20] <ogra> the bootimage you apparently need for these boxes
+[11:21] <ogra> i'll look into getting it running in ltsp during feisty but its very low prio ...
+[11:21] <siretart> hm. I'll ask michael about this at lunch. he should have some insight in this
+=== PuMpErNiCkLe [n=pumperni@about/essy/bacon/PuMpErNiCkLe]  has joined #ubuntu-devel
+=== cjwatson [n=cjwatson@82-69-40-219.dsl.in-addr.zen.co.uk]  has joined #ubuntu-devel
+[11:34] <tepsipakki> are main merges handled completely by core-devs?
+=== gicmo [n=gicmo@p5491F14C.dip.t-dialin.net]  has joined #ubuntu-devel
+[11:35] <ogra> tepsipakki, you can do merges as "non-core-dev" but should contact the person listed on the merges page for uploading
+[11:35] <pitti> Keybuk: could you please put your interfaces configuration and 'avahi-browse -at' into a bug report about avahi, so that I can point Lennart to this?
+[11:35] <tepsipakki> ogra: yes, sure
+[11:35] <tepsipakki> thanks
+[11:37] <Keybuk> pitti: for which, vmware or the "I get no DNS" ?
+[11:37] <pitti> Keybuk: oh, you don't get any DNS at all, or just not for .local?
+[11:37] <pitti> Keybuk: I mainly meant the vmware issue, although they sound related
+[11:37] <Keybuk> pitti: I don't get any service discovery at all
+[11:37] <Keybuk> even with vmware turned off
+[11:37] <Keybuk> so I have two problems
+[11:38] <Keybuk> 1) when vmware is running, the wrong IP is answered
+[11:38] <cjwatson> tepsipakki: to be honest it's usually not worth it for non-core-devs to do main merges - it tends to be more work to review somebody else's merge than to just do it, IME
+[11:38] <pitti> Keybuk: is that powerpc?
+[11:38] <cjwatson> tepsipakki: except perhaps in very complicated cases
+[11:38] <Keybuk> 2) when vmware IS NOT running, I just don't get any service discovery
+[11:38] <StevenK> pitti: Not with vmware....
+[11:38] <Keybuk> pitti: amd64 on one machine, i386 on the other
+[11:38] <Keybuk> pitti: running avahi-discover on my laptop (feisty i386) does not see any services my desktop (edgy amd64) exports, not even its hostname
+[11:39] <pitti> Keybuk: on powerpc I have to restart /etc/init.d/avahi-daemon to make it pick up new stuff, maybe that's not just confined to ppc then
+[11:39] <Keybuk> the simplest test is "ping quest.local" on my laptop, which returns NXDOMAIN, despite tcpdump showing mdns traffic and replies
+[11:39] <pitti> Keybuk: but on your edgy desktop you have avahi-autoipd running?
+[11:39] <cjwatson> gar, why is there no gtk.Window.get_default()?
+=== Adri2000 [n=Adri2000@unaffiliated/adri2000]  has joined #ubuntu-devel
+[11:39] <Keybuk> pitti: restarting avahi-daemon on the feisty machine fixed the problem
+[11:40] <Keybuk> pitti: no, edgy desktop just has avahi-daemon running
+[11:40] <pitti> Keybuk: it seems to work without restarting on my amd64 box, but I get the effect on my ibook
+[11:40] <Keybuk> it's the feisty package that seems broken
+[11:40] <pitti> Keybuk: I'll talk to him about that
+[11:40] <pitti> right
+[11:40] <pitti> Keybuk: AFAICS you need avahi-autoipd to actually announce the IP to avahid
+[11:41] <Keybuk> pitti: that's bogus
+[11:41] <Keybuk> autoipd is only if you want a link-local IP
+[11:41] <pitti> Keybuk: but that might just have been a false impression due to the broken feisty avahi
+[11:41] <Keybuk> service discovery and IP discovery is supposed to work on ordinary networks too
+[11:41] <pitti> actually yes
+[11:41] <Keybuk> the problem just appears to be that the feisty daemon doesn't detect or announce things until it's restarted
+[11:42] <pitti> Keybuk: ok, if restarting it fixes things for you then we have the same bug
+[11:42] <tepsipakki> cjwatson: yeah, I was looking at syslinux, but maybe start with something easier instead ;)
+[11:42] <cjwatson> tepsipakki: doko's on that
+[11:42] <Keybuk> bug #72728 is consistent with the problem that I am seeing
+[11:42] <Ubugtu> Malone bug 72728 in avahi "Avahi possible regression in 0.6.10-0ubuntu3.2" [Undecided,Unconfirmed]  http://launchpad.net/bugs/72728
+[11:43] <tepsipakki> cjwatson: cool
+[11:43] <Riddell> mvo: any plans to fix the apt i386 fail to build?
+[11:43] <cjwatson> tepsipakki: even discounting the above, you should ALWAYS check with the person named on merges.ubuntu.com before starting on a merge
+[11:43] <mvo> Riddell: when you build it locally?
+[11:43] <cjwatson> otherwise there's a good chance of duplicating work
+[11:43] <mvo> Riddell: it currently fails for -O0, but I'm fixing this right now
+[11:44] <tepsipakki> cjwatson: yes I've read the docs, just haven't started doing any work yet
+[11:44] <Riddell> mvo: thanks
+[11:44] <pitti> Keybuk: aah, that gives me a good clue, will check that out; thanks for the pointer
+[11:45] <Mithrandir> seb128: I now publish the feisty unapproved queue every 35 minutes past the hour; the deb-src line is "deb http://people.ubuntu.com/~tfheen/unapproved-queue/feisty /" (it's empty now).  JFYI.
+=== seb128 hugs Mithrandir
+[11:45] <seb128> Mithrandir: thank you!
+[11:46] <Mithrandir> I'll probably crank that up to every 15 minutes or so during freezes, now I just keep it running to keep me on my toes.
+[11:46] <seb128> 35 minutes is fine enough I think
+[11:47] <pitti> Mithrandir: rock
+[11:47] <Mithrandir> seb128: it's hourly; 35 minutes past the hour.
+[11:47] <pitti> Mithrandir: I get a 403 in firefox, though
+[11:47] <seb128> Mithrandir: well, hourly is still good enough ;)
+[11:47] <Mithrandir> pitti: happier now?
+[11:48] <pitti> Mithrandir: yup, thanks
+[11:48] <Mithrandir> ok, good, it just creates new queues with the wrong permissions, they're not reset when my publish-queue script runs.
+[11:49] <Keybuk> pitti: the vmware thing does appear to be interesting
+[11:49] <Keybuk> basically it does answer differently depending on the interface the request comes in on
+[11:49] <Keybuk> if you request from another machine, you get the logical IP for that request
+[11:50] <Keybuk> if you request from localhost, you get a random interface <g>
+[11:50] <pitti> hm, if I do 'ping donald.local' (which is my localhost), I get '10.28.130.200', which is my eth0
+=== shackan [n=shackan@85-18-14-13.fastres.net]  has joined #ubuntu-devel
+[11:51] <pitti> Keybuk: I also have an eth1, so maybe it just picks the first it comes across
+[11:51] <Keybuk> quest scott% getent hosts quest.local
+[11:51] <Keybuk> 172.16.95.1     quest.local
+=== pitti reconfigures vmware for the new kernel
+[11:51] <Keybuk> quest scott% ssh syndicate getent hosts quest.local
+[11:51] <Keybuk> 82.108.80.245   quest.local
+[11:52] <pitti> argh, vmware module doesn't build with 2.6.19-7
+[11:53] <pitti> Keybuk: what does 'avahi-browse -at' show to you? I get a 'donald' entry for all local ethernet devices I have configured
+[11:53] <pitti> and the one it actually uses for donald.local is the last one
+[11:54] <gnomefreak> evolution-data-server really doesnt like being installed/upgraded today bug has been filed already
+[11:54] <Keybuk> pitti: command not found
+[11:55] <seb128> gnomefreak: bug on what?
+[11:55] <gnomefreak> evolution-data-server
+=== Keybuk tries avahi-utils
+[11:55] <pitti> Keybuk: dpkg -S grinding
+[11:55] <pitti> Keybuk: avahi-utils, right
+[11:55] <gnomefreak> hold on a sec ill grab it
+[11:55] <Keybuk> pitti: it shows me an entry for all devices, and seems to pick the first one
+[11:55] <seb128> gnomefreak: thank you; if that's a bug on  e-d-s I'm going to close it right now
+[11:56] <seb128> https://launchpad.net/distros/ubuntu/+source/evolution-data-server/+bug/74797
+[11:56] <Ubugtu> Malone bug 74797 in evolution-data-server "[Feisty] evolution-data-server wont install" [Undecided,Unconfirmed]  
+[11:56] <seb128> hum
+[11:56] <pitti> Keybuk: so it really just seems to pick a random one; funny, though, it should detect this special case and just deliver 127.0.0.1
+[11:56] <gnomefreak> your welcome but closing isnt good
+[11:56] <Keybuk> pitti: indeed :p
+[11:56] <pitti> Keybuk: hm, maybe it was his concern to avoid problems if lo is not configured
+[11:56] <Keybuk> oddly enough, lo is the one device it *hasn't* got :p
+=== ogra_ [n=ogra@p548AD21D.dip.t-dialin.net]  has joined #ubuntu-devel
+[11:56] <gnomefreak> they are depends 
+[11:56] <Keybuk> if lo is not configured, you will have bigger problems <g>
+[11:56] <pitti> right :)
+[11:57] <pitti> but AFAIK this is only a curiosum
+[11:57] <Keybuk> indeed
+[11:57] <pitti> s/K/CS/
+[11:57] <Keybuk> though I can see it causing people alarm when testing
+[11:57] <Keybuk> like it did for me
+=== giskard [n=giskard@213-140-22-74.fastres.net]  has joined #ubuntu-devel
+[11:57] <pitti> Keybuk: I'll poke the restart thing this afternoon
+[11:57] <seb128> gnomefreak: bug rejected
+[11:57] <seb128> gnomefreak: why closing is not good?
+[11:57] <gnomefreak> seb128: why? something you already working on?
+=== tkamppeter [n=till@208.252.119.44]  has joined #ubuntu-devel
+[11:58] <seb128> gnomefreak: no, that's just a feature
+[11:58] <Keybuk> I still don't have any real use for avahi of course, since rhythmbox won't share removable devices (pointed look at seb128), but it's nice to see if it would work if I did :p
+[11:58] <seb128> gnomefreak: evolution-data-server Breaks evolution (<=2.9)
+[11:58] <gnomefreak> its a feature that it wont install?
+[11:58] <seb128> gnomefreak: so it'll not install it before having evolution 2.9 instlaled
+[11:58] <gnomefreak> seb128: it didnt have the <= it had <
+[11:58] <seb128> gnomefreak: yep
+[11:58] <pitti> Keybuk: gnome-user-share worked nicely, too
+[11:58] <seb128> gnomefreak: <<
+[11:58] <gnomefreak> k
+[11:59] <seb128> gnomefreak: the point is that e-d-s and evo need to be upgraded together
+[11:59] <gnomefreak> well people cant do updates while its like that unless they use aptitude
+[11:59] <seb128> gnomefreak: so apt will refuse to upgrade e-d-s while evo is not available
+[11:59] <gnomefreak> k i understand
+[11:59] <seb128> gnomefreak: well, that would be an apt bug then
+[11:59] <pitti> Keybuk: and, from what I've heard, vino sessions (not tested myself)
+[11:59] <seb128> gnomefreak: talk to mvo about it
+[11:59] <gnomefreak> k
+[12:00] <pitti> Keybuk: let's avahify ssh, so that every intruder instantly knows where to bruteforce at :-P
+[12:00] <thom> pitti: apple ssh already does that afaik
+[12:01] <pitti> oh, really?
+[12:01] <Keybuk> pitti: doesn't the apple stack already do that?
+[12:01] <thom> yeah, you can click connect in terminal and get a list of local ssh servers
+=== pitti changed the sshd port on his server to specifically avoid automatic raids
+=== highvoltage [n=highvolt@196.1.57.88]  has joined #ubuntu-devel
+[12:01] <Keybuk> pitti: I prefer to trust our security team to get ssh fixed very quickly if there's an exploit
+[12:01] <pitti> Keybuk: avahifying apache would be more interesting
+[12:02] <Keybuk> and if they're too slow, and my box gets rooted, I know where you both live <g>
+[12:02] <pitti> Keybuk: for me it's mainly a DoS issue
+[12:02] <pitti> Keybuk: the other day I had MBs worth of auth.log for millions of rejected ssh attempts
+[12:02] <thom> pitti: there're are mdns modules for apache2 already i believe
+[12:03] <pitti> thom: cool
+[12:03] <Keybuk> dbus TCP proxy!
+[12:03] <Keybuk> advertised with mdns!
+[12:03] <thom> pitti: libapache2-mod-dnssd
+[12:03] <Keybuk> inject dbus messages directly into other machines!
+[12:03] <Keybuk> FTW!
+[12:03] <Mithrandir> Keybuk: excellent idea!
+[12:04] <cjwatson> I have a bug about advertising ssh over avahi ...
+[12:04] <pitti> and advertise it as 'support remote hotpluggable devices'
+[12:04] <gnomefreak> ty seb128 i changed the package and made my comments ill ping mvo about it in a bit i still need coffee
+[12:04] <pitti> cjwatson: OMG, I intended this to be a joke
+[12:04] <seb128> gnomefreak: np!
+[12:05] <iwj> gnomefreak: Are you sure people can't do updates at all ?  The idea is that just e-d-s would be held back.  (And its dependencies.)
+[12:05] <cjwatson> pitti: feel free to find the Debian bug and scream at it. :)
+[12:05] <gnomefreak> iwj: i pasted it on there
+[12:05] <gnomefreak> iwj: i had to use aptiutude
+[12:05] <Keybuk> pitti: you should know not to joke at members of this company for fear your oh-so-humorous idea gets implemented
+[12:05] <gnomefreak> iwj: apt-get dist-upgrade would not go further than the depends errors
+[12:06] <gnomefreak> couldnt you just have e-d-s be held back by apt instead of erroring?
+[12:06] <pitti> Keybuk: one interesting thing that I saw was pulse's avahi module; so you can effortlessly route your music output to the kitchen computer when you go downstairs to prepare lunch
+[12:07] <seb128> iwj: https://launchpad.net/distros/ubuntu/+source/evolution-data-server/+bug/74797 has the command line log
+[12:07] <Ubugtu> Malone bug 74797 in apt "[Feisty] evolution-data-server wont install" [Undecided,Unconfirmed]  
+[12:07] <iwj> gnomefreak: That is what it is supposed to do.
+[12:07] <pitti> Keybuk: how could we ever survive without that feature?
+[12:07] <iwj> seb128: Reading it now.
+[12:07] <gnomefreak> it didnt :(
+[12:07] <gnomefreak> brb going for coffee refill
+[12:07] <Keybuk> pitti: I want the telepathy/avahi integration ... so you can effortlessly talk to your partner or housemates without actually having to deal with servers :p
+[12:08] <Keybuk> landscape/avahi integration? <g>
+[12:08] <pitti> brave new world -- 'effortlessly talking to housemate' != 'going over and talk in RL' any more
+[12:09] <iwj> gnomefreak: apt-get upgrade works.
+[12:10] <jdub> Keybuk: did you see the apt/avahi stuff? that's pretty cool
+=== lmanul [n=manu@dan75-4-82-239-58-38.fbx.proxad.net]  has joined #ubuntu-devel
+[12:11] <thom> jdub: um.
+=== xerxas [n=R67894@AGrenoble-257-1-85-108.w86-219.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== cjwatson dumps Debug::pkgProblemResolver output into that apt bug for the record
+[12:13] <gnomefreak> iwj: it didnt work here as you saw
+[12:13] <pitti> Riddell: ugh, seems my latest dapper-updates hal with the fix for scsi cd-roms broke KDE's media mounting (bug 72869)
+[12:13] <Ubugtu> Malone bug 72869 in kdebase "Latest hal update breaks USB stick mounting in kubuntu dapper kde 3.5.5" [Undecided,Confirmed]  http://launchpad.net/bugs/72869
+[12:13] <iwj> Err, you tried _dist-upgrade_.  What does   apt-get upgrade   do for you ?
+[12:14] <Riddell> pitti: only for kde 3.5.5, which isn't officially supported
+[12:14] <gnomefreak> i already worked around it aptitude puts it in held back
+[12:14] <iwj> gnomefreak: Although I suppose it's too late for you to experiment now.
+[12:14] <Riddell> pitti: but I'll look into making a suitable hal package for those kubuntu.org packages when I have some spare time
+[12:14] <pitti> Riddell: still weird, the change should only cause more CD-ROMs to appear in hal
+[12:14] <Riddell> hmm
+[12:14] <pitti> Riddell: shall I revert the ubuntu-updates patch for now?
+[12:14] <iwj> gnomefreak: Right.  I have a system here which I haven't upgraded yet and   apt-get upgrade   seems to want to do the right thing (I didn't confirm it) whereas dist-upgrade gives the same error as in the bug report.
+[12:15] <pitti> it'll break SCSI and USB CD-ROMs again, but...
+[12:15] <iwj> gnomefreak: What does   apt-get dist-upgrade   do on your system now ?  I think it will complain still.
+[12:15] <Riddell> pitti: I wouldn't revert a fix in ubuntu because it breaks some unsupported packages
+[12:15] <iwj> That is, produce that error.   And apt-get upgrade will just say nothing to be done because everything's held back, I think.
+[12:15] <gnomefreak> when dpkg is done ill run it
+[12:15] <cjwatson> iwj: probably just needs to MarkKeep it?
+[12:16] <iwj> cjwatson: It already does that.
+[12:16] <cjwatson> where?
+[12:16] <iwj> That's how it gets to be held back with `upgrade'.  TBH I need to read the code for dist-upgrade again to know why it hates this.
+[12:16] <gnomefreak> dist-upgrade shouldnt error on it at all
+[12:16] <cjwatson> iwj: I'm looking at pkgProblemResolver::Resolve and don't see it
+[12:16] <iwj> gnomefreak: Yes, I agree.
+[12:17] <cjwatson> gnomefreak: you are stating the obvious
+[12:17] <pitti> Riddell: still curious; do you happen to have an idea where it breaks?
+[12:17] <pitti> Riddell: it shouldn't affect the properties of USB sticks etc. at all
+[12:17] <iwj> cjwatson: My suspicion is that `dist-upgrade' thinks that any held back packages mean it has failed and then it refuses to continue.
+[12:17] <cjwatson> iwj: not in my experience
+=== fernando [n=fernando@unaffiliated/musb]  has joined #ubuntu-devel
+[12:18] <gnomefreak> upgrade now has it in held back but so did aptitude 
+[12:18] <cjwatson> iwj: looking at the debug output I think it's simply not marking it as keep, really
+[12:18] <iwj> gnomefreak: And dist-upgrade is still broken for you ?
+=== finalbeta [n=finalbet@d5152A68A.access.telenet.be]  has joined #ubuntu-devel
+[12:18] <iwj> cjwatson: How odd.
+[12:18] <gnomefreak> yes
+[12:18] <pitti> Riddell: aah, presumably because dapper's KDE didn't yet use the hal backend methods, but pmount? and upstream KDE 3.5.5 does?
+[12:18] <gnomefreak> dist-upgrade still wont hold them back 
+[12:19] <iwj> gnomefreak: Right, that's as I expect.  That means that `apt-get upgrade' is a workaround.
+=== iwj goes to fix apt.
+[12:21] <Riddell> pitti: yes
+[12:22] <gnomefreak> ty iwj 
+=== jonh_wendell [n=wendell@200165129086.user.veloxzone.com.br]  has joined #ubuntu-devel
+[12:22] <Adri2000> Riddell: I had already reported bug 73847
+[12:22] <Ubugtu> Malone bug 73847 in tagcoll "tagcoll has been renamed to tagcoll2 in Debian" [Undecided,Confirmed]  http://launchpad.net/bugs/73847
+=== Gman [i=gman@nat/sun/x-490881a309b64110]  has joined #ubuntu-devel
+[12:24] <pitti> Riddell: hm, in dapper's hal there's only a '<policy at_console="true">' policy for the Mount methods, no 'group=plugdev' as in edgy
+[12:25] <pitti> Riddell: so it actually appears that it should fail the same way with dapper final's hal
+[12:26] <pitti> Riddell: the curious thing is that they claimed that downgrading to 18.1 from dapper-proposed fixed it
+[12:26] <pitti> Riddell: but 18.2 is the same as 18.1, just uploaded to dapper-updates
+[12:26] <Riddell> pitti: the kubuntu.org kde 3.5.5 archive has a modified version of 0.5.7-1ubuntu18.1
+[12:27] <pitti> Riddell: aah, that explains it then
+[12:27] <pitti> Riddell: so reverting the hal fix in ubuntu would not fix it at all then
+[12:27] <Riddell> so I need to (find someone else to) compile hal with the same change for the new version in dapper-updates
+=== jordi [n=jordi@115.Red-213-96-69.staticIP.rima-tde.net]  has joined #ubuntu-devel
+[12:27] <Riddell> fdoving: fancy taking that on?
+=== givre [n=Florent@APuteaux-152-1-43-241.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== givr1 [n=Florent@APuteaux-152-1-43-241.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== Lure [n=lure@ubuntu/member/lure]  has joined #ubuntu-devel
+[12:28] <pitti> fdoving: what was the change? adding 'group=plugdev' dbus policy for the Mount methods?
+=== jonh_wendell [n=wendell@200165129086.user.veloxzone.com.br]  has joined #ubuntu-devel
+[12:29] <Riddell> pitti: "Install Storage scripts"
+[12:29] <pitti> Riddell: oh, heh :)
+[12:30] <pitti> Riddell: I remember, we removed them from dapper's hal because they were horribly insecure
+[12:30] <Riddell> Adri2000: I'm not sure why it hasn't automatically synced
+=== apokryphos [n=apokryph@87-194-86-227.bethere.co.uk]  has joined #ubuntu-devel
+=== jordi [n=jordi@115.Red-213-96-69.staticIP.rima-tde.net]  has joined #ubuntu-devel
+=== cprov [n=cprov@monga.dorianet.com.br]  has joined #ubuntu-devel
+[12:32] <xerxas> how can I report a bug to dh_make ? 
+[12:33] <xerxas> dh_make follows symlink ( I did a "ln -s my-stuff  my_stuff-x.x )
+[12:33] <Adri2000> xeros: the package is debhelper
+[12:33] <cjwatson> no it's not
+[12:33] <seb128> xerxas: https://launchpad.net/distros/ubuntu/+source/debhelper/+filebug ?
+[12:33] <cjwatson> it's dh-make
+[12:34] <cjwatson> do not file dh_make bugs on debhelper
+[12:34] <seb128> ups, right
+=== Gloubiboulga [n=gauvain@sd-4736.dedibox.fr]  has joined #ubuntu-devel
+[12:34] <Adri2000> err, sorry :p
+=== jono [n=jono@ubuntu/member/jono]  has joined #ubuntu-devel
+[12:34] <seb128> xerxas: https://launchpad.net/distros/ubuntu/+source/dh-make/+filebug ?
+[12:34] <xerxas> seb128, but anyway, the bug is to be reported upsteam 
+[12:34] <xerxas> isn't it ? 
+[12:34] <seb128> xerxas: report it to Debian then
+[12:34] <xerxas> ok 
+[12:34] <xerxas> bugzilla.debian.org ? 
+[12:34] <seb128> no
+[12:34] <seb128> bugs.debian.org
+[12:35] <xerxas> yup 
+[12:35] <seb128> what is your bug?
+[12:35] <seb128> Debian doesn't use bugzilla
+=== jack_wyt_home [n=jack@221.223.17.226]  has joined #ubuntu-devel
+[12:35] <seb128> xerxas: http://bugs.debian.org/cgi-bin/pkgreport.cgi?src=dh-make;dist=unstable list it maybe?
+=== sabdf1 [n=sabdfl@217.205.109.249]  has joined #ubuntu-devel
+[12:36] <twb> xerxas: if you have a Debian system, use reportbug(1) or M-x report debian bug RET
+[12:37] <xerxas> seb128,  maybe 
+[12:37] <dholbach> _ion: thanks for your work - uploaded
+[12:37] <twb> (Those won't work on an Ubuntu host, because they'll be sent to Ubuntu instead of Debian)
+[12:37] <xerxas> I'll have a look
+[12:37] <xerxas> thanks 
+[12:37] <xerxas> twb,  k , thanks 
+[12:37] <twb> See also http://www.debian.org/Bugs/Reporting
+[12:38] <xerxas> seb128,  already reported ! 
+[12:38] <xerxas> http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=311512
+[12:38] <xerxas> thanks 
+[12:38] <Ubugtu> Debian bug 311512 in debhelper "debhelper: [dh_make]  Does not understand symlinked source directories" [Normal,Open]  
+[12:38] <seb128> np
+[12:38] <twb> reportbug(1) just interactively creates the email in the correct format and sends it to submit@bugs.debian.org.
+[12:38] <xerxas> 1 year and 188 days old 
+[12:38] <xerxas> that's not going to be fixed anytime soon ! 
+[12:38] <xerxas> should be trivial 
+[12:39] <xerxas> let's try to fix it :)
+[12:39] <xerxas> in my dreams 
+[12:40] <twb> xerxas: if you create a patch, submit it to 311512@bugs.debian.org with "tags + 311512 patch" and "thank you" as the first two lines of the message body.
+[12:41] <xerxas> twb,  remind me that when I'll have wrote the patch 
+[12:41] <cjwatson> "tags 311512 patch" not "tags + 311512 patch"
+[12:41] <xerxas> but I don't think I will have :)
+[12:41] <twb> cjwatson: thanks
+[12:41] <cjwatson> or if you use the + put it after the bug number not before
+[12:42] <twb> The problem is actually that dh_make *is* dereferencing the directory name.
+=== gicmo [n=gicmo@p5491E010.dip.t-dialin.net]  has joined #ubuntu-devel
+[12:43] <twb> (Personally, I find it easier to just use mv(1) instead of ln(1).)
+=== givre [n=Florent@APuteaux-152-1-43-241.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[12:50] <xerxas> twb, I think the fix should be pretty simple 
+[12:50] <xerxas> isn't it ? 
+[12:50] <twb> xerxas: broadly, yes.
+[12:51] <twb> xerxas: but I'm not sure that it SHOULD be fixed.
+[12:51] <xerxas> why so ? 
+[12:51] <twb> xerxas: why can't you just use `mv foo foo-1.2' instead of `ln -s foo foo-1.2'?
+[12:52] <xerxas> twb, what about svn stuff ? 
+[12:52] <xerxas> or any vcs 
+[12:52] <twb> I don't understand the question.
+[12:52] <xerxas> you ln -s the directory , copy debian inside 
+[12:53] <Keybuk> don't suppose anyone knows how to stop the mouse inside vmware being so fast?
+[12:53] <xerxas> twb, if you build a package from a vcs, then the directory names are from the vcs 
+[12:53] <twb> xerxas: Debian .orig.tar.gz's should not contain CVS/ other SCM metadata.
+=== malcc [n=malcolm@host86-135-237-55.range86-135.btcentralplus.com]  has left #ubuntu-devel ["Leaving"] 
+[12:53] <xerxas> making a link allows you to not mv every time you update 
+=== givr1 [n=Florent@APuteaux-152-1-41-161.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[12:53] <twb> xerxas: I suggest you take this to #debian-devel on irc.oftc.net.  This is not on-topic here.
+[12:54] <xerxas> twb, right !
+[12:54] <twb> Also, the denizens there will know more than I do.
+=== zenrox [n=zenrox@pool-71-115-219-183.spknwa.dsl-w.verizon.net]  has joined #ubuntu-devel
+=== jack_wyt_home [n=jack@221.223.17.226]  has joined #ubuntu-devel
+[12:57] <xerxas>  denizens ? 
+[12:57] <xerxas> what is it ? 
+[12:57] <xerxas> who are they ? 
+[12:57] <twb> denizen = person
+=== jack_at_home [n=jack@221.223.17.226]  has joined #ubuntu-devel
+[01:05] <xerxas> twb, ok , thanks , sorry for my bad english 
+[01:05] <xerxas> patch made !
+[01:06] <twb> xerxas: no problem.
+[01:07] <xerxas> twb, "tags 311512 patch" it's the first line of the mail ? 
+[01:07] <xerxas> or the subject of it , 
+[01:07] <xerxas> ?
+[01:08] <twb> xerxas: OK.  In the body, the first two lines must be as follows:
+[01:08] <twb> tags 311512 + patch
+[01:08] <twb> thank you
+[01:08] <twb> ...OK?
+[01:08] <geser> Keybuk: could you please give back conglomerate to the buildds? thanks
+[01:08] <xerxas> twb,  yes , and the subject ? 
+[01:08] <xerxas> no subject ? 
+[01:08] <twb> The subject can be anything you like.
+[01:08] <cjwatson> you also have to CC to control@bugs.debian.org
+[01:08] <xerxas> <cjwatson> "tags 311512 patch" not "tags + 311512 patch"
+[01:08] <cjwatson> control commands such as "tags" aren't honoured otherwise
+[01:09] <twb> 22:41 <cjwatson> or if you use the + put it after the bug number not before
+[01:09] <xerxas> err, sorry 
+[01:09] <twb> cjwatson: aha, I did wonder.
+=== PuMpErNiCkLe [n=pumperni@about/essy/bacon/PuMpErNiCkLe]  has joined #ubuntu-devel
+[01:09] <xerxas> where do I attach the patch ? 
+[01:09] <cjwatson> xerxas: an attachment in your mailer is fine
+[01:10] <xerxas> ok 
+[01:10] <twb> http://www.debian.org/Bugs/server-control
+[01:10] <twb> http://www.debian.org/Bugs/Developer
+[01:10] <xerxas> thanks guys, sorry for off-topic ! 
+[01:10] <twb> xerxas: those have all the information.
+=== ivoks [n=ivoks@161.53.50.54]  has joined #ubuntu-devel
+=== cr3 [n=marc@pdpc/supporter/bronze/cr3]  has joined #ubuntu-devel
+=== jrib [n=jasonr@unaffiliated/jrib]  has joined #ubuntu-devel
+=== freeflying_ [n=freeflyi@ubuntu/member/freeflying]  has joined #ubuntu-devel
+[01:35] <Mithrandir> geser: given-back
+=== pitti [n=pitti@ubuntu/member/pitti]  has joined #ubuntu-devel
+=== pitti [n=pitti@195.227.105.180]  has joined #ubuntu-devel
+=== Yagisan [n=Yagisan@doomsday/developer/Yagisan]  has joined #ubuntu-devel
+[01:38] <geser> Mithrandir: thanks
+=== jack_at_home [n=jack@221.223.17.226]  has joined #ubuntu-devel
+=== Gman is now known as GmanAFK
+=== paran_ [n=paran@cl-56.sto-01.se.sixxs.net]  has joined #ubuntu-devel
+=== ivoks_ [n=ivoks@161.53.50.54]  has joined #ubuntu-devel
+=== KaiL [n=KaiL@p548F7E6C.dip.t-dialin.net]  has joined #ubuntu-devel
+[01:49] <dholbach> <ctrl>-<cursor> doesn't work in vim any more - did anybody else notice?
+=== cr3 [n=marc@pdpc/supporter/bronze/cr3]  has joined #ubuntu-devel
+[01:50] <_ion> I haven't ever used that key combination in vim.
+[01:51] <_ion> Aha, it's word-left/right. Use W/B/w/b
+[01:52] <dholbach> so it works for you?
+[01:52] <_ion> E/e to go to the end of the current word, and gE/ge to go to the end of the previous word.
+[01:52] <_ion> I tried it in gvim, it worked in it.
+[01:52] <_ion> But i never use arrow keys in vim.
+[01:53] <_ion> You have to move the right hand too much to use them. :-)
+[01:53] <cjwatson> it's listed in the help file; dunno why it broke
+[01:54] <dholbach> it used to work until yesterday or maybe the day before
+=== herzi [n=herzi@kiwi.mediascape.de]  has joined #ubuntu-devel
+[01:58] <dholbach> doko: Alter! Is http://www.debian.org/doc/packaging-manuals/java-policy/ the key document for Debian java packaging?
+[02:04] <Lathiat> pitti: apache avahifying -> mod_dnssd -> http://0pointer.de/lennart/projects/mod_dnssd/
+[02:04] <pitti> Lathiat: hi! yup, already saw it
+[02:04] <Lathiat> pitti: :)
+[02:05] <pitti> Lathiat: btw, that recent security patch still seems to be buggy, did you see things like bug 72728?
+[02:05] <Ubugtu> Malone bug 72728 in avahi "Avahi possible regression in 0.6.10-0ubuntu3.2" [Undecided,In progress]  http://launchpad.net/bugs/72728
+[02:05] <pitti> Lathiat: I see that on my iBook, I need to restart avahi to make it see changes and even itself
+[02:05] <Lathiat> pitti: yeh i think some netlink messages are coming from elsewhere in some situations i've been a bit busy to debug it
+[02:05] <Lathiat> pitti: i might have a look at it now
+[02:06] <Lathiat> pitti: network manager seems to particularly upset it, it never sees the interfaces come up in the first place
+[02:06] <pitti> Lathiat: still weird, I thought netlink messages would only come from the kernel
+[02:06] <pitti> but I probably misunderstood the concept then
+[02:06] <Lathiat> no they dont
+[02:06] <Lathiat> for eaxmple, when avahi request s list of network interfaces
+[02:07] <Lathiat> the PID is set to that of avahi
+[02:07] <Lathiat> redhats original patch broke avahi _completely_
+[02:07] <pitti> the one which only checked for pid==0, I remember
+[02:07] <Lathiat> yeh
+[02:07] <Lathiat> so i guess they are coming from elsewhere too
+[02:07] <Lathiat> perhaps theres some other kidn of check we can do
+=== Lathiat fiddles
+[02:08] <pitti> Lathiat: can you only check the pid of the packet sender? or other properties, too?
+[02:08] <pitti> like, uid?
+[02:09] <Lathiat> err, avahi doesnt seem to compile on feisty
+[02:09] <Lathiat> iface-linux.c:192: error: invalid application of 'sizeof' to incomplete type 'struct ifaddrmsg' 
+=== Lathiat ponders
+[02:09] <Lathiat> oh i think i have a patch for this
+[02:09] <pitti> Lathiat: oh, not any more? it did one or two weeks ago
+[02:09] <Lathiat> i need to make a new release soon i'll try fix this
+[02:09] <pitti> Lathiat: #include <linux/if_addr.h>?
+[02:09] <Lathiat> pitti: avahi from svn
+[02:09] <pitti> ah
+[02:10] <pitti> Lathiat: ah, feisty's package has a patch
+[02:10] <pitti> debian/patches/80_undefined-macros.patch
+[02:10] <pitti> Lathiat: standard fix for kernel 2.6.19 headers
+=== Lathiat quietly mutters something about sending patches upstream ;)
+[02:11] <pitti> Lathiat: http://people.ubuntu.com/~pitti/tmp/avahi-2.6.19-compile.patch
+[02:11] <Lathiat> err i dont have that patch here
+=== Lathiat apt-get updates
+[02:11] <StevenK> I had to #include <linux/if.h> in aircrack-ng...
+=== dade` [n=dade@nectarine/admin/dade]  has joined #ubuntu-devel
+[02:11] <pitti> Lathiat: I put it there on my people page
+=== Nafallo [n=nafallo@ubuntu/member/nafallo]  has joined #ubuntu-devel
+[02:12] <Lathiat> so have they removed that from the headers?
+[02:12] <Lathiat> i love the casting in C sometimes
+[02:13] <pitti> Lathiat: right, apps have to define that themselves for some reason entirely unclear to me
+=== Nafallo [n=nafallo@ubuntu/member/nafallo]  has left #ubuntu-devel ["Lmnar"] 
+[02:13] <Lathiat> ok, how to duplicate this
+[02:13] <pitti> (after all, isn't the point of header files to provide such common and horrible things???)
+[02:13] <Lathiat> indeed
+[02:13] <StevenK> pitti: I thought so. :-)
+=== Lathiat tries network manager
+[02:14] <Lathiat> heh
+[02:14] <pitti> Lathiat: I can replicate it without problem on my laptop - in fact, avahi doesn't work at all until I restart it
+[02:14] <Lathiat> netlink.c: dropped message nlmsg_pid=10350
+[02:14] <pitti> OTOH, on my desktop it works reasonably fine
+[02:14] <Lathiat> netlink.c: dropped message nlmsg_pid=10308
+[02:14] <Lathiat> which is network manager
+[02:14] <pitti> Lathiat: hm, when I think about it, I don't use n-m on my desktop, so the dropped packets seem to confuse avahi eternally
+[02:14] <Lathiat> how do you get the network manager tray icon these days?
+[02:14] <pitti> Lathiat: Alt+F2 nm-applet
+[02:15] <Lathiat> err
+[02:15] <Lathiat> netlink.c: dropped message nlmsg_pid=1536174148
+=== Lathiat puzzles
+[02:15] <pitti> ugh
+=== Lathiat checks the data type of that
+[02:16] <Lathiat> __u32
+[02:16] <pitti> a 16 bit int put into an uninit'ed 32 bit int?
+[02:16] <Lathiat> yeh i put %d
+=== chris77^ [n=ctam@217.31.69.98]  has left #ubuntu-devel [] 
+[02:17] <Lathiat> excuse my apparent incomptence what printf argument do i want to print a __u32 ?
+[02:18] <pitti> Lathiat: I thought %d should DTRT for 32 bit, and indeed it prints out a 32 bit number
+[02:19] <Lathiat> yeh
+[02:19] <Lathiat> weird
+[02:19] <pitti> Lathiat: maybe it is written with some pointer conversion magic and only the lower 16 bits get filled?
+=== Lathiat figures out the contents of that message
+[02:20] <pitti> Lathiat: 1536174148 & 65535 == 64100
+[02:20] <cjwatson> I'd probably use printf("%lu", (unsigned long) u32_variable) myself ...
+[02:20] <pitti> Lathiat: do you happen to have a process with that number? (although unlikely)
+[02:20] <Lathiat> nope
+[02:21] <pitti> Lathiat: for the record, same behavior with 2.6.17, so it's not the new kernel
+[02:21] <Lathiat> interesting network manager makes avahi see
+[02:22] <Lathiat> new interface / withdrawn / net interfaces / withdrawn / new interface
+[02:22] <Lathiat> when enabled (from an alreayd disabled state)
+[02:22] <Lathiat> hrm
+[02:22] <Lathiat> netlink.c: would drop message nlmsg_pid=1536174148 
+[02:22] <Lathiat> New relevant interface eth0.IPv4 for mDNS.
+=== jsgotangco [i=keefejoh@ubuntu/member/jsgotangco]  has joined #ubuntu-devel
+[02:24] <Lathiat> i cant reproduce that
+[02:25] <Lathiat> ah, yes i can
+[02:25] <Lathiat> this is weird
+[02:25] <Lathiat> pitti: do you know much about how network manager works?
+[02:26] <pitti> Lathiat: not really at the internals
+[02:26] <Lathiat> i see the interface come relevant from root, then disappear, then ti comes back but it fails to join the multicast group
+[02:26] <Lathiat> then its withdrawn from a non root pid
+[02:26] <Lathiat> then comes back from a non root pid
+[02:26] <Lathiat> which if im not dropping them, works
+[02:26] <pitti> Lathiat: I uploaded a new n-m yesterday that disables the internal ipv4ll stack and checks for avahi-autoipd (which is called automatically in latest feisty)
+[02:27] <Lathiat> is there another tool that will monitor ip changes off netlink?
+[02:27] <pitti> Keybuk: ^ do you happen to know?
+[02:27] <Lathiat> hrm, yes, iproute2 has a monitor mode
+=== Lathiat compares
+[02:29] <Lathiat> yeh network manager definitely adds and removes the ips twice then adds it again
+[02:29] <Lathiat> dhclient byitself does it once
+[02:29] <Lathiat> does network-manager use dhclient?
+[02:30] <giskard> yes
+[02:30] <pitti> Lathiat: it calls dhcdbd which calls dhclient
+[02:30] <StevenK> No, it uses the dbus dhcp client.
+[02:30] <StevenK> Ah. It does, just indirectly.
+=== StevenK updates his internal mapping.
+[02:31] <pitti> Lathiat: so first it calls dhclient, if that times out, dhclient calls avahi-autoipd through the dhclient-exit-hooks.d script
+[02:31] <pitti> Lathiat: during that process, the interface might go up twice (but shouldn't)
+[02:31] <pitti> Lathiat: which version of n-m do you have?
+[02:31] <Lathiat> Version: 0.6.3-2ubuntu7
+[02:31] <pitti> ok, that should just use avahi-autoipd
+[02:33] <giskard> pitti, uh! i will grab this patch
+[02:33] <Lathiat> so even with using ifconfig, it triggers a series of events that sees the ip added, removed and added again, but network manager seems to remove and add them again
+[02:33] <pitti> giskard: which patch?
+[02:33] <giskard> avahi-autoipd..
+[02:33] <pitti> giskard: if it's the n-m one, I'm about to send it to upstream after it got some initial testing in feisty
+[02:34] <giskard> pitti, do you think it's not "stable" enough?
+[02:34] <pitti> giskard: I discussed the approach with Dan a bit, and he seems to agree; however, my patch is pretty hackish because I didn't want to rewrite half of the logic
+[02:34] <pitti> giskard: oh, it's not unstable, it's just not a nice patch
+[02:34] <giskard> oki
+[02:34] <Lathiat> pitti: what happens on yoru laptop, is it after a certain time it stops working?
+[02:34] <pitti> giskard: the only operational flaw that I see is that the IP address will be shown as '0' in the properties
+[02:35] <pitti> giskard: i. e. it doesn't read it out from the ethX:avahi interface
+[02:35] <pitti> Lathiat: it never really starts working until I restart it
+[02:35] <Lathiat> pitti: so if you start avahi, then use network manager to get an ip
+[02:35] <Lathiat> it doesnt work at all
+[02:35] <pitti> Lathiat: right
+[02:35] <Lathiat> does it do that on a clean boot?
+[02:35] <Lathiat> straight away?
+[02:35] <pitti> Lathiat: ok, TBH I didn't try it recently before I fiddled with n-j
+[02:35] <pitti> n-m even
+=== pitti tries
+[02:35] <Lathiat> (not a suspend,e tc)
+[02:36] <pitti> Lathiat: is "'avahi-browse -ta' not empty" a sufficient test?
+[02:36] <Lathiat> pitti: ok, your right, i can reproduce that
+[02:36] <Lathiat> start avahi, then use network manager, cant do anything
+[02:36] <Lathiat> i will debug from here
+[02:37] <pitti> great
+[02:37] <pitti> I cross-check on my box
+=== pitti wonders how hal verifies netlink packets
+[02:37] <Lathiat> and it works if i revert that patch
+[02:38] <Lathiat> i only tested the case of starting avahi with a network already up when i did that patch
+[02:38] <Lathiat> guess i should have done more :/
+[02:38] <pitti> yay, laptop doesn't boot
+[02:38] <Lathiat> and it works using ifconfig
+[02:38] <Lathiat> but not network manager
+[02:38] <Lathiat> i've had this problem befor
+[02:39] <Lathiat> enetwork manager was triggering a different code patch
+[02:39] <Lathiat> *path
+[02:39] <Lathiat> and it works fine with dhclient, just not network manager
+[02:39] <Lathiat> it seems that extra withdraw and add does something magic
+[02:40] <Lathiat> yep, avahi hasnt joined the multicast group
+[02:40] <Lathiat> obviously when it withdraws the interface it drops the membership
+[02:40] <Lathiat> and when it comes back, we're dropping that message because it comes from pid != 0
+[02:40] <Lathiat> so i'll have to chase that up
+[02:40] <Lathiat> thanks for your help
+[02:40] <Lathiat> know anyone that knows network manager enough to have an explanation of why it seems to cause that?
+[02:42] <doko> dholbach: yes, plus some/one wiki page(s)
+[02:42] <dholbach> doko: alright, I needed it to review a java package - if you could give me a link to those wiki pages, that'd be great - for telepathy-wilde and friends too
+=== GmanAFK is now known as Gman
+[02:42] <dholbach> doko: is that on wiki.debian.net? if so, I shold just be able to find it
+[02:43] <StevenK> Hah, neat. mjg59 has the same problem with Planet Debian that I do.
+[02:43] <sivang> doko: when will we sart with the python transition frenzy? :)
+[02:43] <sivang> (e.g. managing packages that are affected by the new policy, new spec from UDS as well)
+[02:44] <pitti> Lathiat: hal enables sender credentials and refuses uid != 0
+[02:44] <pitti> Lathiat: we probably need the avahi-daemon uid, too, but would something like that work?
+=== dogmatism [n=josh@24.115.218.54.res-cmts.sth.ptd.net]  has joined #ubuntu-devel
+=== lucas [n=lucas@ubuntu/member/lucas]  has joined #ubuntu-devel
+[02:47] <Lathiat> where do you get the uid from?
+=== pitti msgs some bits
+=== BenC__ [n=bcollins@collinsap1.phunnypharm.org]  has joined #ubuntu-devel
+=== AstralJava [n=jokitalo@cm-083-102-068-117.lohjanpuhelin.fi]  has joined #ubuntu-devel
+=== xerxas_ [n=R67894@AGrenoble-257-1-55-26.w86-206.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== BenC__ [n=bcollins@collinsap1.phunnypharm.org]  has joined #ubuntu-devel
+=== BenC [n=bcollins@debian/developer/bcollins]  has joined #ubuntu-devel
+=== truz_`24 [n=truz_`24@74.129.166.232]  has joined #ubuntu-devel
+=== givre [n=Florent@APuteaux-152-1-41-161.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== pradeep [n=pradeep@59.92.49.204]  has joined #ubuntu-devel
+=== Seveas [n=seveas@ubuntu/member/seveas]  has joined #ubuntu-devel
+=== zul [n=chuck@ubuntu/member/zul]  has joined #ubuntu-devel
+[03:05] <doko> dholbach: yes, I think it's wiki.debian.net
+[03:11] <jsgotangco> hey sabdfl
+[03:12] <sabdfl> hi jerome
+[03:20] <xerxas_> sabdfl, while you're here, do you know if there's something new on the ambassdor role ? 
+[03:20] <xerxas_> ambassador 
+[03:20] <xerxas_> (if you remember the issue ) 
+[03:21] <sivang> xerxas: forum ambassador?
+[03:21] <xerxas> sivang,  during classrooms we talked about an ambassador role in launchpad / malone 
+[03:22] <xerxas> that would be a role for a assigned to someone for a package , that would be the contact for upstream work
+[03:22] <sivang> xerxas: ah, I see, nice
+=== Tonio_ [n=tonio@139.8.100-84.rev.gaoland.net]  has joined #ubuntu-devel
+=== pitti [n=pitti@ubuntu/member/pitti]  has joined #ubuntu-devel
+=== jsgotangco [i=keefejoh@ubuntu/member/jsgotangco]  has joined #ubuntu-devel
+=== Tonio_ [n=tonio@139.8.100-84.rev.gaoland.net]  has joined #ubuntu-devel
+=== pirast [n=martin@p508B29CF.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== poningru [n=poningru@ip72-209-68-178.ga.at.cox.net]  has joined #ubuntu-devel
+=== bddebian [n=bdefrees@mail.ottens.com]  has joined #ubuntu-devel
+[03:55] <cjwatson> pitti: mind if I assign increase-hwdb-participation to you, and you can assign it on further if you don't have time for it?
+[03:55] <cjwatson> (and somebody else does)
+[03:55] <cjwatson> I definitely don't have time :)
+[03:56] <pitti> cjwatson: that's fine
+=== pitti will implement other specs as fast as possible
+[03:56] <cjwatson> thanks, done
+[03:56] <bddebian> Howdy
+=== frafu [n=frafu@vodsl-9762.vo.lu]  has joined #ubuntu-devel
+[04:00] <cjwatson> rodarvus: what's happening with bullet-proof-x?
+[04:07] <doko> cjwatson, infinity: should it be considerd a bug, if a universe package is able to build with a multiverse build dependency?
+[04:07] <cjwatson> is able to? no. requires? yes
+[04:08] <cjwatson> if a universe package requires multiverse to build, please file a bug on the package and CC ubuntu-archive to request that we move it to multiverse
+[04:09] <doko> ohh, mysql-connector-java never needed a build since warty
+=== geser [n=michael@dialin104058.justdsl.de]  has joined #ubuntu-devel
+=== Adri2000 [n=Adri2000@unaffiliated/adri2000]  has joined #ubuntu-devel
+=== sabdfl [n=sabdfl@ubuntu/member/pdpc.silver.sabdfl]  has joined #ubuntu-devel
+=== givre [n=Florent@APuteaux-152-1-41-161.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[04:16] <Riddell> mvo: what does the complex input tickbox do in the feisty gnome language-selector?
+[04:19] <dholbach> doko: gracias
+[04:19] <sivang> can anyone suggest a good package that used debhelper tp update po files? it appears that irda-utils doesn't even include a manual target in debian/rules for updating the translations, I'd like to fix that by adding it. Can someone suggest how?
+[04:20] <sivang> "good package" = goot to learn from
+=== frafu [n=frafu@vodsl-9762.vo.lu]  has left #ubuntu-devel [] 
+[04:22] <cjwatson> sivang: you mean stuff in debian/po/
+[04:22] <cjwatson> ?
+[04:22] <sivang> cjwatson: exactly
+[04:23] <cjwatson> sivang: just running debconf-updatepo is usual; I've never seen anyone bother with a debian/rules target for that
+[04:23] <cjwatson> since it's easier to type the command and then it's the same for all packages that have translated debconf templates :)
+[04:24] <sivang> cjwatson: will this also handle updates to the .pot file?
+[04:24] <cjwatson> yes
+[04:24] <cjwatson> see its man page with the command-line options
+[04:24] <sivang> cjwatson: cool , thanks. Somehow I got the wrong impression this needs to happen when building
+[04:24] <sivang> ;)
+[04:24] <cjwatson> it's more usual to run it before building the source package, so that they're up to date in the source
+[04:25] <sivang> cjwatson: right, makes more sense actually, I had based this impression on the gdebi package upon which I based my hubackup package.
+[04:26] <sivang> cjwatson: mvo included there a call to update pot/po files in the form of a call to intltool
+[04:28] <sivang> cjwatson: http://paste.ubuntu-nl.org/35783/ , but this is in setup.py
+[04:28] <cjwatson> sivang: that tends to happen for .pot/.po files outside debian/po/, since the process for updating those is less consistent
+[04:28] <sivang> cjwatson: right, mucho gracias for the help :)
+=== dogmatism [n=josh@24.115.218.54.res-cmts.sth.ptd.net]  has joined #ubuntu-devel
+[04:30] <sivang> cjwatson: on a related note, the changes inside ubuntu's irda-utils for attaching to device while booting is due to the upstart change yes?
+[04:30] <sivang> cjwatson: (e.g. we have a complete question there that is local to us)
+=== slomo [n=slomo@ubuntu/member/slomo]  has joined #ubuntu-devel
+[04:32] <cjwatson> sivang: no idea; I'm not familiar with that package
+[04:37] <slomo> rodarvus: ping?
+[04:38] <cjwatson> TypeError: argument 1 of QButtonGroup() has an invalid type
+=== cjwatson pokes Qt with a big stick
+=== j_ack [n=rudi@p508D897F.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== jdong [n=jdong@ubuntu/member/jdong]  has joined #ubuntu-devel
+=== dous [n=dous@124.107.250.61]  has joined #ubuntu-devel
+[04:44] <sivang> Lathiat: do you know if the prop. ATI driver already merged and installable in fesity?
+[04:46] <iwj> cjwatson: You were right about MarkKeep.
+=== Huahua [n=hua_@122.0.229.59]  has joined #ubuntu-devel
+[04:47] <iwj> I didn't spot this bug in my earlier testing because I foolishly assumed that if upgrade worked so would dist-upgrade.
+[04:49] <iwj> mvo: Do we have the dist-upgrader capable of upgrading dpkg and apt first, yet ?
+=== lbm [n=lbm@82.192.173.92]  has joined #ubuntu-devel
+=== rrittenhouse [n=tad@cpe-76-188-35-66.neo.res.rr.com]  has joined #ubuntu-devel
+=== pitti [n=pitti@ubuntu/member/pitti]  has joined #ubuntu-devel
+=== dogmatism [n=josh@24.115.218.54.res-cmts.sth.ptd.net]  has joined #ubuntu-devel
+=== pitti grumbles about modprobe nvidia failing
+=== abattoir [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+[04:55] <_ion> benc: nVidia released 1.0.6931, which should fix bug #72805.
+[04:55] <Ubugtu> Malone bug 72805 in linux-restricted-modules-2.6.19 "nvidia-glx 1.0.9629 causes OpenGL programs to segfault on NV2x hardware" [Medium,Confirmed]  http://launchpad.net/bugs/72805
+[04:56] <BenC> _ion: thanks
+=== thekorn [n=markus@a89-182-73-233.net-htp.de]  has joined #ubuntu-devel
+=== Ingar [n=saltvik@ti500720a080-10858.bb.online.no]  has joined #ubuntu-devel
+=== cprov [n=cprov@monga.dorianet.com.br]  has joined #ubuntu-devel
+=== TomB| [n=ownthebo@host81-152-42-42.range81-152.btcentralplus.com]  has joined #ubuntu-devel
+=== highvoltage [n=jaagaan@ubuntu/member/highvoltage]  has joined #ubuntu-devel
+[05:14] <cjwatson> iwj: I couldn't get MarkKeep to DTRT in my experiments, but I didn't really understand the structure of that code and didn't play with it for very long. Glad it worked for you.
+=== terrex [n=terrex@84-122-63-17.onocable.ono.com]  has joined #ubuntu-devel
+=== Burgundavia [n=corey@S0106000fb085cc63.gv.shawcable.net]  has joined #ubuntu-devel
+=== lbm [n=lbm@82.192.173.92]  has joined #ubuntu-devel
+[05:23] <sivang> Keybuk: around?
+[05:25] <Keybuk> sivang: always
+[05:25] <sivang> Keybuk: in irda-utils, there are ubuntu changes that add another question to the debconf templtes, for changelog matters, I have assumed this this to accomodate upstart changes? can you please confirm or advice otherwise?
+[05:25] <Keybuk> not that I'm aware of
+[05:25] <sivang> Keybuk: okay, I'll ask mjg59  then, he also touched it
+[05:25] <sivang> mjg59: ^^^
+[05:25] <Keybuk> what's the question?
+[05:26] <Keybuk> irda-utils (0.9.16-9ubuntu1) breezy; urgency=low
+[05:26] <Keybuk>   * Add autoconfiguration support (Debian #324404)
+[05:26] <Keybuk>  -- Matthew Garrett <mjg59@srcf.ucam.org>  Tue, 30 Aug 2005 13:57:21 +0100
+[05:26] <Keybuk> ?
+[05:26] <Ubugtu> Debian bug 324404 in irda-utils "irda-utils: Where possible, use PNP to autoconfigure IrDA" [Wishlist,Open]  http://bugs.debian.org/324404
+[05:27] <sivang> Keybuk: right, but where is that recorded in ubuntu packge where it's already implemented?
+[05:27] <sivang> Keybuk: (changelog, that is)
+[05:28] <sivang> Keybuk: oh sorry, found it now
+[05:28] <sivang> Keybuk: rather, became unblind now :)
+[05:29] <sivang> Keybuk: thanks, and sorry for this terrible noise
+[05:29] <Keybuk> :)
+=== givre [n=Florent@APuteaux-152-1-64-193.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[05:33] <jdong> Keybuk: can you spare a moment to do a quick backport so someone stops nagging me?
+[05:34] <jdong> this wonderful offer also is available to any other archive admins :D
+[05:34] <Keybuk> I'd prefer not to do "quick" backports ;)  bad things happen
+[05:35] <jdong> Keybuk: mediawiki1.7 needs backporting
+[05:35] <jdong> Keybuk: last week only the metapackage mediawiki was backported
+[05:35] <jdong> which needless to say does nothing :)
+[05:35] <pitti> a-haa
+[05:35] <jdong> I forgot to mention in the bug report that both packages need to be backported
+[05:35] <Keybuk> heh
+[05:36] <Keybuk> jdong: from/to?
+[05:36] <jdong> feisty->{dapper,edgy}
+[05:36] <pitti> slomo: when a sudo'ed program tries to talk to the notification daemon and it hangs, that'd be our famous dbus bug again, right?
+[05:36] <cjwatson> Riddell: could you have a look at kde-ui.py in http://bazaar.launchpad.net/~ubuntu-core-dev/ubiquity/trunk/ and tell me what I'm doing wrong in set_autopartition_choices that means none of the child widgets get shown?
+[05:36] <slomo> pitti: dbus-glib bug, right
+[05:36] <cjwatson> I fixed a few crashes just now, but now it does nothing useful
+[05:37] <pitti> slomo: so since I actually want it to connect to the user's notifyd, I could just apply a similar patch, right?
+[05:37] <dholbach> doko: does <ctrl>-<cursor> give you "5C" in the terminal too? I tried emacs vs. vi now and gnome-terminal vs. xterm - all of them have the same behaviour - could that be libreadline?
+[05:37] <pitti> slomo: or is the get_dbus() thing supposed to properly connect to the user's bus even with uid==0?
+[05:38] <Riddell> cjwatson: branching
+=== mvo [n=egon@i59F71381.versanet.de]  has joined #ubuntu-devel
+[05:38] <Keybuk> jdong: ok, done
+[05:38] <jdong> Keybuk: thank you! when I get rich and famous you can have a share of my fortune :)
+[05:38] <jdong> (though I wouldn't bank on that)
+[05:38] <slomo> pitti: dbus_bus_get() should return error if uid!=session_bus_uid... so you should apply a setuid patch as for time-admin :)
+=== rotarychainsaw [n=bj@ool-18bbaf15.dyn.optonline.net]  has joined #ubuntu-devel
+[05:39] <pitti> slomo: ok, great; I'll do that then
+=== pitti hugs slomo
+=== slomo hugs pitti :)
+[05:40] <slomo> pitti: and it's definitely by design that even connections by uid 0 are rejected... though dbus-glib has this nice deadlock bug somewhere ;)
+=== mvo [n=egon@i59F71381.versanet.de]  has joined #ubuntu-devel
+=== mvo [n=egon@i59F71381.versanet.de]  has joined #ubuntu-devel
+[05:41] <cr3> I'm netinstalling feisty herd 1 and I'm getting a failed installation step because: evolution-data-server: Breaks: evolution (< 2.9) but 2.8.1-0ubuntu4 is to be installed
+=== mvo [n=egon@i59F71381.versanet.de]  has joined #ubuntu-devel
+[05:41] <cr3> is this worth reporting or perhaps I am doing something terribly wrong?
+[05:42] <jdong> cr3: well, you can't really netinstall "herd 1"
+[05:42] <jdong> cr3: you're netinstalling today's feisty :)
+[05:42] <BenC> cr3: The bad thing about net-installs is that you will always be using the current day's packages, where as with a CD install, you are getting a know good set
+[05:42] <doko> dholbach: no, I don't get any characters
+[05:43] <cr3> BenC: during this testing phase, do you think it's actually better to be testing directly against the archive in preparation for building a good known set?
+[05:43] <dholbach> doko: hrm.... I have this since yesterday or the day before on all of my machines - in the shell it's all fine, but in the editor it breaks for me
+[05:44] <BenC> cr3: If you plan on test more than at every herd-X, then netinstall is best
+[05:44] <BenC> my typing sucks, I need sleep
+[05:44] <Riddell> mvo: should the "Input Method" tickbox get disabled in language selector for languages that don't use scim?
+[05:44] <cr3> BenC: good point, so I need to find a way to netinstall using the files from an ISO then
+[05:45] <cr3> BenC: sleep or more coffee
+=== Lure_ [n=lure@BSN-77-152-53.dsl.siol.net]  has joined #ubuntu-devel
+[05:45] <dade`> macbooks need sleep too
+[05:45] <jdong> cr3: oh, do you not have a CD drive or something like that?
+[05:46] <BenC> jdong: he's trying to automate it over lots of machines
+[05:46] <jdong> oh
+[05:46] <cr3> jdong: what BenC said, and it's not as trivial as I had originally thought :)
+[05:47] <mvo> Riddell: no, just unchecked. the goal is to allow people to have a english environment but still use scim 
+[05:47] <jdong> cr3: considered cheating yet?
+[05:47] <jdong> cr3: like installing one and then cloning it to all the rest :D
+=== luka74 [n=lure@external-7.hermes.si]  has joined #ubuntu-devel
+[05:47] <cr3> jdong: the installation process is part of the test :)
+[05:47] <jdong> pffft :)
+[05:49] <cjwatson> Riddell: (checkout (over sftp) may be your friend)
+[05:49] <cjwatson> depends if you want to commit without bothering with a separate branch
+=== Cieffe [n=cieffe@151.54.91.50]  has joined #ubuntu-devel
+=== nags [n=nags@125.22.3.253]  has joined #ubuntu-devel
+[06:00] <alex-weej> does anyone else think that feisty using compiz/beryl instead of metacity is a bad idea simply because it's just not GNOME anymore?
+[06:02] <jdong> alex-weej: but it's shiny. Shiny always better. shiny shiny shiny
+[06:02] <Keybuk> alex-weej: GNOME appears to be considering compiz
+[06:02] <alex-weej> Keybuk: interesting
+[06:02] <alex-weej> Keybuk: well if they consider Metacity to be a POS then i suppose why not
+[06:05] <Keybuk> I suspect it's more that they consider metacity to not be a compositing window manager
+[06:06] <Solarion> is splice() in the current glibc, or will it be in feisty?
+=== mgalvin [n=mgalvin@ubuntu/member/mgalvin]  has joined #ubuntu-devel
+[06:07] <Keybuk> Solarion: it's in feisty's libc
+[06:08] <Keybuk> the edgy kernel supports it, so you can declare it on your own
+[06:09] <Keybuk> syscall (SYS_splice, ...)
+[06:09] <Solarion> Keybuk: Ah.  I had wondered.
+[06:10] <Solarion> I'll help field-test feisty when it's time
+[06:10] <Solarion> then the splice tasty will be mine
+[06:11] <jdong> hmm, rapidly rolling my mousewheel over the taskbar area triggers the Urgent notification on windows
+=== wasabi_ [n=wasabi@ubuntu/member/wasabi]  has joined #ubuntu-devel
+=== ogra [n=ogra@ubuntu/member/ogra]  has joined #ubuntu-devel
+[06:23] <alex-weej> what package is dbus-viewer in these days?
+[06:23] <alex-weej> jdong: reproducable
+[06:24] <jdong> is it a bug?
+[06:24] <alex-weej> i guess it's because windows try to raise themselves as soon as they are clicked
+[06:24] <alex-weej> but by the time that happens
+[06:24] <alex-weej> you've already activated another window
+[06:24] <jdong> yeah, that's what I thought too
+[06:24] <alex-weej> and the WM won't let it take focus 
+[06:24] <jdong> and it doesn't sound like there's an easy fix
+[06:24] <alex-weej> no
+[06:24] <alex-weej> other than changing the behaviour of scrollwheel on the window list
+[06:25] <alex-weej> to be totally honest with you i don't think it's a good feature
+[06:25] <alex-weej> i love being able to scroll through tabs and the workspace switcher
+[06:25] <jdong> alex-weej: yeah, i.e. don't allow another window selection until the first one is raised....
+[06:25] <alex-weej> but it just seems a bit odd on the wlist
+[06:25] <jdong> though that could result in a hang condition
+[06:25] <alex-weej> jdong: yeah it could block but that would make it slow
+[06:25] <alex-weej> jdong: the most seamless fix would be to make the windows raise, but not steal focus
+[06:26] <alex-weej> jdong: but that would require to hint the WM as to what is going on
+[06:26] <alex-weej> jdong: as windows don't normally raise if they won't have focus
+[06:26] <alex-weej> then again, i know toss all about WMs, so i might be barking up the wrong tree
+[06:29] <alex-weej> piss. i've forgotten how to use dbus.
+=== zorglu_ [n=zorglub@206.43.102-84.rev.gaoland.net]  has joined #ubuntu-devel
+[06:29] <mjg59> sivang: Nothing to do with upstart
+[06:30] <zorglu_> q. i would like to link a programm with glibc in static under ubuntu, is there a package to get gnu libc in static ? (aka without the nss kludge) aka to avoid this kind of message during static linking/usr/lib/libglib-2.0.a(gutils.o): In function `g_get_any_init_do': warning: Using 'getpwuid' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking 
+[06:35] <mdz> Keybuk: say, what's behind the uploads with changed-by: merge-o-matic?
+[06:35] <Keybuk> mdz: doko :p
+[06:35] <mdz> Keybuk: folks forgetting to update the generated changelog?
+[06:35] <mdz> Keybuk: did you say something to him about it already?
+[06:35] <Keybuk> yeah, already pointed it out to him
+[06:35] <doko> yes, he did
+[06:35] <mdz> thanks
+[06:35] <Keybuk> soyuz appears to have lost the "CHANGELOG MENTIONS YOUR MOM!" test that katie had
+[06:36] <Keybuk> last time I asked about adding a check to the uploader, it was suggesting that rewriting the buildd code was easier, so *shrug8
+=== jonib1 [n=jonas@ua-83-227-144-18.cust.bredbandsbolaget.se]  has joined #ubuntu-devel
+[06:39] <cjwatson> I know they reckon NascentUpload is horrible, but I don't understand why it's hard to add another check. All it needs is a blacklist of changed-by addresses checked in verify_changes() *shrug*
+[06:40] <sivang> mjg59: right, sorry, Keybuk already referenced me to the changelog entry.  I was just being blind
+[06:44] <bronson> I've built linux-vserver-enabled Dapper and Edgy kernels by following https://wiki.ubuntu.com/KernelCustomBuild
+[06:44] <bronson> works beautifully except for one thing: linux-headers-2.6.17-10-ref-386_2.6.17.1-10.34_i386.deb
+[06:45] <bronson> Where does -ref- come from?  I'd like to change it to -vserver-2.2.0-
+[06:48] <zorglu_> no taker for my question about glibc and static linking ?
+=== ph8 [i=henri@rigel.orion-hosting.co.uk]  has joined #ubuntu-devel
+[06:50] <zorglu_> q. is there a channel for people coding on ubuntu ?
+[06:51] <jelmer> I think that's what this channel is intended to be :-)
+[06:51] <cjwatson> no, it's not
+[06:51] <zorglu_> well :) here all my questions are plain ignored :)
+[06:52] <cjwatson> this channel is for the development *of* Ubuntu
+[06:52] <zorglu_> cjwatson: and is there a channel for people coding on ubuntu ?
+[06:52] <cjwatson> not to my knowledge, but your question is not Ubuntu-specific anyway
+[06:52] <bronson> zorglu_: it's a pretty obscure question.  Not many here would have ever done that before.
+[06:53] <bronson> At least, I haven't.  :)
+[06:53] <bronson> anyway, don't feel bad.  My Ubuntu-related kernel question is being ignored too...
+[06:54] <twb> zorglu_: your question would be better addressed to a GCC or glibc forum.  (That's forum as in "a place of discussion",  not forum as in "web forum".)
+=== Amaranth [n=travis@ubuntu/member/amaranth]  has joined #ubuntu-devel
+[06:55] <twb> zorglu_: plenty of people in here don't even write C programs.  This channel is for people packaging software for Ubuntu, and people building tools to facilitate that.
+[06:55] <zorglu_> for info, the question is ubuntu related as it is directly in relation on how glibc is packaged. but cjwatson answered me privatly
+[06:56] <twb> Oh, I see.
+[06:56] <twb> Excuse my ignorance, then :-)
+[06:56] <zorglu_> and the answer is that it is not possible to link in static under ubuntu except if you compile your own glibc :)
+[06:56] <mjg59> zorglu_: The question is Ubuntu-related, but still not on-topic for this channel
+[06:57] <bronson> Does anyone know why the kernel version appears twice in my AUTOBUILD=1 kernel debs?
+[06:57] <kylem> bronson, why don't you try asking on #ubuntu-kernel?
+[06:57] <zorglu_> i understood that, just fixing the misconception about how related it was to ubuntu
+[06:57] <bronson> kylem: good call; I didn't even realize that existed.  ;)
+[06:57] <kylem> bronson, it appears once because it's in the package name, and once because of the version number of the package.
+[06:58] <kylem> linux-headers-2.6.17-10-ref-386 is the name, 2.6.17.1-10.34 is the version
+[06:58] <kylem> anyway, brb. lunch.
+[06:58] <bronson> kylem: thanks
+=== bronson investigates
+[06:59] <Riddell> cjwatson: it's something funky to do with having two QButtonGroups for one frame
+[06:59] <zorglu_> as a suggestion, if somebody asks a question offtopic, i think it is nicer to say 'this is offtopic dont ask this here' that plainly ignore him :)
+[06:59] <cjwatson> oh, whee
+[06:59] <zorglu_> see ya :)
+=== zorglu_ [n=zorglub@206.43.102-84.rev.gaoland.net]  has left #ubuntu-devel ["Konversation] 
+[06:59] <kylem> i'm not sure about the "ref" thing, please ask in #ubuntu-kernel, i'll look if you've not found by the time i get back from lunch.
+[06:59] <Riddell> cjwatson: this fixes it by adding another frame inside the autopartition_frame http://kubuntu.org/~jriddell/ubiquity-part-auto.diff
+[07:00] <Riddell> (without the changed build-deps obviously)
+[07:00] <cjwatson> Riddell: thanks; I'll have a look tomorrow
+[07:00] <cjwatson> (phone call now, then finishing up for the day)
+=== heno [n=henrik@ubuntu/member/heno]  has joined #ubuntu-devel
+=== hunger [n=tobias@p54A7258E.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== haggai [n=halls@credativ.bcnadsl.com]  has joined #ubuntu-devel
+[07:08] <Riddell> mvo: what happening during the "checking available language support" progress bar in gnome-language-selector?
+[07:08] <hunger> Is NM currently broken? It hangs trying to get a IP here... dhclient eth0 works fine though.
+[07:10] <mvo> Riddell: it reads the apt cache and checks for the available packages
+[07:11] <Riddell> mvo: it seems to take longer than the qt version, which has no progress bar but presumably does the same thing
+[07:12] <mvo> Riddell: right. I can check that, it possible that this is the actual checking code that was not ported yet to the common/ code. or its something stupid/wrong happening in the gtk frontend
+[07:13] <Riddell> mvo: or it might just be my imagination
+[07:14] <mvo> :)
+[07:17] <_ion> hunger: Probably something with interaction between dhclient and avahi-autoipd is broken.
+=== raphink [n=raphink@ubuntu/member/raphink]  has joined #ubuntu-devel
+=== phanatic [n=phanatic@ubuntu/member/phanatic]  has joined #ubuntu-devel
+=== apokryphos- [n=apokryph@87-194-86-227.bethere.co.uk]  has joined #ubuntu-devel
+=== zenrox [n=zenrox@pool-71-115-219-183.spknwa.dsl-w.verizon.net]  has joined #ubuntu-devel
+=== zyga_ [n=zyga@ubuntu/member/zyga]  has joined #ubuntu-devel
+=== stratus [n=stratus@cronopio.rits.org.br]  has joined #ubuntu-devel
+=== ogra [n=ogra@ubuntu/member/ogra]  has joined #ubuntu-devel
+=== jonib1 [n=jonas@ua-83-227-144-18.cust.bredbandsbolaget.se]  has joined #ubuntu-devel
+[08:12] <madduck> df/l
+[08:12] <madduck> sorry
+=== LarstiQ 1.84m
+=== givre [n=Florent@APuteaux-152-1-64-193.w82-120.abo.wanadoo.fr]  has joined #ubuntu-devel
+[08:13] <sivang> Lathiat: hey dude, you around?
+=== Lure [n=lure@clj46-234.dial-up.arnes.si]  has joined #ubuntu-devel
+=== zenrox [n=zenrox@pool-71-115-219-183.spknwa.dsl-w.verizon.net]  has joined #ubuntu-devel
+=== jonib1 [n=jonas@ua-83-227-144-18.cust.bredbandsbolaget.se]  has left #ubuntu-devel [] 
+=== xerxas [n=R67894@mut38-5-82-246-190-19.fbx.proxad.net]  has joined #ubuntu-devel
+=== ailean [n=ailean@82-40-205-105.stb.ubr07.uddi.blueyonder.co.uk]  has joined #ubuntu-devel
+=== giskard [n=giskard@213-140-22-74.fastres.net]  has joined #ubuntu-devel
+=== abattoir_ [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+=== anibal [n=anibal@debian/developer/anibal]  has joined #ubuntu-devel
+=== giskard_ [n=giskard@62-101-126-218.ip.fastwebnet.it]  has joined #ubuntu-devel
+=== lamont` [i=lamont@nat/hp/x-87498139b881caff]  has joined #ubuntu-devel
+[09:17] <mjg59> Wow
+[09:17] <bddebian> wow?
+[09:17] <mjg59> Evolution deals really badly with imap folders containing 160000 mails
+=== lamont [i=lamont@nat/hp/x-f646e2cf03869cd2]  has joined #ubuntu-devel
+[09:19] <_ion> Heh.
+=== abattoir__ [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+[09:25] <bronson> mjg59: It deals badly with folders containing 1600 messages.  :)
+=== Amaranth [n=travis@ubuntu/member/amaranth]  has joined #ubuntu-devel
+=== jonh_wendell [n=wendell@200165129086.user.veloxzone.com.br]  has left #ubuntu-devel ["Bye"] 
+=== ppd [n=max@dslb-088-064-020-150.pools.arcor-ip.net]  has joined #ubuntu-devel
+=== sfeehan [n=steve@ip-216-54-20-242.coxfiber.net]  has joined #ubuntu-devel
+[09:40] <ppd> hi. I'm sorry for writing here, but I have to ask whether there's some progress fixing the problem that you can't print multiple pages with evince in ubuntu?
+[09:42] <Adri2000> ppd: bug number?
+[09:43] <ppd> Adri2000: I guess it's  https://launchpad.net/distros/ubuntu/+source/evince/+bug/67164 
+[09:43] <Ubugtu> Malone bug 67164 in gtk "Evince print dialog doesn't respect page setup settings" [Unknown,Unconfirmed]  
+=== ailean [n=ailean@82-40-205-105.stb.ubr07.uddi.blueyonder.co.uk]  has joined #ubuntu-devel
+[09:52] <LaserJock> ppd: looks like people are definately aware of it
+=== jdong [n=jdong@ubuntu/member/jdong]  has joined #ubuntu-devel
+=== pvanhoof [n=pvanhoof@d54C0EE14.access.telenet.be]  has joined #ubuntu-devel
+=== martin_ [n=martin@p508B29CF.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+=== johanbr [n=j@JBrannlund.MathStat.Dal.Ca]  has joined #ubuntu-devel
+=== Lure [n=lure@clj46-234.dial-up.arnes.si]  has joined #ubuntu-devel
+=== martin_ [n=martin@p508B29CF.dip0.t-ipconnect.de]  has joined #ubuntu-devel
+[10:21] <Lathiat> sivang: am now
+=== gnomefreak [n=gnomefre@ubuntu/member/gnomefreak]  has joined #ubuntu-devel
+[10:23] <bluefoxicy> huh
+[10:23] <bluefoxicy> Anyone know when security-best-practice became security-vulnerability from Ubuntu's POV, and why I wasn't notified?
+=== bluefoxicy points at bug 49323
+[10:24] <Ubugtu> Malone bug 49323 in gnupg "gnupg executable stack fix" [Undecided,Confirmed]  http://launchpad.net/bugs/49323
+[10:24] <bluefoxicy> ..... oh thanks Ubugtu, I'm going to have loads of fun with you.  *starts looking for security-sensitive flagged bugs that he can't access*
+[10:25] <bluefoxicy> actually I wonder if that's hidden.
+[10:25] <mjg59> bluefoxicy: Given that ubugtu runs as an unprivileged user...
+[10:25] <mjg59> ubugtu debian 400000
+[10:25] <Ubugtu> Debian bug 400000 in libroxen-imho "libroxen-imho: [INTL:fr]  French debconf templates translation" [Wishlist,Closed]  http://bugs.debian.org/400000
+[10:25] <keescook> bluefoxicy: it's just something I wanted to watch, so I marked it a security vuln.  But you're right, I should just subscribe instead.
+[10:26] <bluefoxicy> mjg59:  yes, interesting.  That bug is marked as a security vulnerability now (for some reason); I was wondering 1) why; and 2) doesn't that hide the bug from normal users?
+[10:26] <bluefoxicy> keescook:  nods.  Not that I'm complaining about the added attention mind you; just I tried that angle before and was told that it was just wishlist-priority (for gaim) (which I fixed)
+[10:26] <keescook> bluefoxicy: there's a difference between "security" and "private"
+[10:27] <bluefoxicy> keescook:  ah.  On most (mozilla at least, and gentoo IIRC) bugzillas security == zomg nondisclosure
+[10:28] <keescook> I was scratching my head for a while when I first read it because there isn't any amd64 asm, so gpg on my machine doesn't have an exec stack.  :P  showed up (obviously) in the i386 chroot
+[10:28] <bluefoxicy> keescook:  by any chance were you interested in looking for these yourself?  :)
+=== haggai [n=halls@credativ.bcnadsl.com]  has joined #ubuntu-devel
+[10:28] <keescook> yeah, it's on my list of general cleanups, hardening, etc.
+[10:29] <bluefoxicy> nods.  Install pax-utils, scanelf -qeR /bin (or /lib or /usr or any combination), and there you go.  There's some good docs .. actually you can just follow the link that's on that bug ;)
+[10:30] <keescook> bluefoxicy: if you've been collecting these, can you make a wiki page (if there isn't one already) of the program that need the exec-stack fixes?
+[10:30] <keescook> yeah, the gentoo hardening docs are great.
+[10:30] <bluefoxicy> keescook:  it's easy enough to generate your own; but sure.  I should move HardenedHacking somewhere easier... and clean it up.
+[10:30] <jdong> bluefoxicy: my grsec+PaX is still acting like while true; do echo Segmentation Fault; done
+[10:30] <keescook> also on my list is to recompile all of main with PIE and see if I still have a functional system.  :)
+[10:31] <jdong> it took them 400 lines of code to accomplish what one bash line could :)
+[10:31] <jdong> </sarcasm>
+[10:31] <bluefoxicy> keescook:  Gentoo is great in general.  Walk their Portage CVS tree, and you'll find tons of patches to kill executable stacks or PIC violations and such.  It probably wouldn't hurt to get in touch with their hardened herd... (bhale/tseng is a former dev)
+[10:32] <LarstiQ> jdong: if all it does is echo.. :)O
+[10:32] <keescook> jdong: hehe, I need to make that into a t-shirt:    while :; do kill -SEGV $$; done
+[10:32] <jdong> :)
+[10:32] <jdong> grsec v3
+[10:32] <jdong> ultimate security
+[10:32] <jdong> bugs: can't secure /sbin/init
+[10:33] <bluefoxicy> jdong:  which kernel version, and can I see your .config for reference (I'll poke #grsecurity on OFTC and see if they see anything; but you'd really be better off asking there)
+[10:33] <jdong> 2.6.19-ish
+[10:33] <jdong> anyway
+[10:33] <jdong> I'm saving trying grsec again for another day
+[10:33] <bluefoxicy> huh.. is that released or from ~/spender?
+[10:33] <jdong> I have better uses of my time for now :)
+[10:34] <jdong> it was the latest released one I found on grsecurity.org
+=== keescook runs off to snag some lunch
+[10:34] <bluefoxicy> the latest is for .18
+[10:34] <bluefoxicy> I suggest you don't try to wedge it into .19, brad is having problems making that work himself ;)
+[10:34] <jdong> then I meant .18
+[10:34] <jdong> I knew it matched
+[10:35] <jdong> yeah, it was 18
+[10:35] <bluefoxicy> ah ok
+[10:35] <jdong> and I wouldn't try something that silly
+[10:35] <bluefoxicy> jdong:  .config?
+[10:35] <jdong> bleh, I just collapsed all my bzr kernel trees
+[10:35] <jdong> I'll deal with it later
+[10:35] <bluefoxicy> ok
+[10:35] <jdong> we've talked about this before, bluefoxicy :)
+[10:35] <jdong> that was my grsec day :)
+[10:35] <bluefoxicy> yes :P
+[10:36] <jdong> today's my find more bzr bugs day :)
+[10:36] <bluefoxicy> haha
+[10:36] <bluefoxicy> <Bluefox> <jdong> bluefoxicy: my grsec+PaX is still acting like while true; do echo Segmentation Fault; done
+[10:36] <bluefoxicy> <pipacs> tell him that was a very useful bug report
+=== pecisk [n=pecisk@purvc-44-54.maksinets.lv]  has joined #ubuntu-devel
+[10:36] <jdong> LOL
+[10:36] <jdong> you weren't actually supposed to tell them that :D
+[10:36] <bluefoxicy> haha
+[10:37] <jdong> tell him that our senses of humor are quite alike :)
+[10:39] <bluefoxicy> jdong:  if you actually get a chance, can you get a core so you can get a back trace?  Also pipacs is asking you to come over to #grsecurity or #pax on OFTC when you get time
+[10:39] <bluefoxicy> jdong:  and try vdso=0 on the kernel command line if it's breaking that early
+[10:39] <jdong> I will when I get a chance
+[10:39] <bluefoxicy> nods
+[10:39] <jdong> and yeah it's segfaulting in initrd
+[10:39] <bluefoxicy> http://forums.grsecurity.net./viewtopic.php?t=1617
+[10:39] <jdong> in insmod
+[10:39] <jdong> so there's _NO_ system :)
+=== ivoks [n=ivoks@161.53.50.54]  has joined #ubuntu-devel
+[10:41] <jdong> bluefoxicy: yeah that vdso forum post looks like exactly what I'm experiencing
+[10:42] <jdong> bluefoxicy: I'm gonna give that a shot sometime this wweekend
+[10:42] <jdong> I'd still like a grsec-hardened kernel for me server
+[10:43] <bluefoxicy> jdong:  he also says something about using the one in ~spender/ for 2.6.19
+[10:43] <bluefoxicy> http://www.grsecurity.net/~spender/dsc18910.jpg
+[10:43] <bluefoxicy> whoops, that's not it
+[10:43] <bluefoxicy> http://www.grsecurity.net/~spender/grsecurity-2.1.9-2.6.19-200612061905.patch
+[10:44] <jdong> bluefoxicy: tell him thanks
+[10:44] <bluefoxicy> k
+=== xerxas [n=R67894@mut38-5-82-246-190-19.fbx.proxad.net]  has joined #ubuntu-devel
+[10:50] <jdong> yay for resurrecting my kernel trees :)
+=== ph8 [i=henri@rigel.orion-hosting.co.uk]  has joined #ubuntu-devel
+=== abattoir__ [n=abattoir@cm57.omega18.maxonline.com.sg]  has joined #ubuntu-devel
+=== ulaas [n=ulas@81.215.148.157]  has joined #ubuntu-devel
+[10:55] <ulaas> sudo apt-get dist-upgrade
+=== nictuku [n=yves@ubuntu/member/nictuku]  has joined #ubuntu-devel
+=== shackan [n=shackan@host70-137-dynamic.17-87-r.retail.telecomitalia.it]  has joined #ubuntu-devel
+=== Ingar [n=saltvik@ti500720a080-10858.bb.online.no]  has joined #ubuntu-devel
+=== sfllaw [i=sfllaw@debian/developer/coleSLAW]  has joined #ubuntu-devel
+=== mc44 [n=mc44@ip-81-170-101-251.cust.homechoice.net]  has joined #ubuntu-devel
+=== mbiebl [n=michael@e180098174.adsl.alicedsl.de]  has joined #ubuntu-devel
+=== giskard_ [n=giskard@213-140-22-74.fastres.net]  has joined #ubuntu-devel
+=== mako [i=mako@bork.hampshire.edu]  has joined #ubuntu-devel
+=== jack_wyt_ [n=jack@211.154.174.45]  has joined #ubuntu-devel
+=== finalbeta [n=finalbet@d5152A68A.access.telenet.be]  has joined #ubuntu-devel
+=== devscott [n=ssloan@137.81.152.42]  has joined #ubuntu-devel
+[11:32] <Mithrandir> Lure: thanks for your patch; I'll take a look at it tomorrow.
+[11:33] <Lure> Mithrandir: thank you 
+[11:34] <geser> Mithrandir: could you please give-back gaim-libnotify?
+=== zOrK [n=eclipse@66.176.68.228]  has joined #ubuntu-devel
+=== zOrK is now known as z_s
+[11:36] <Mithrandir> geser: done
+[11:36] <geser> thanks
+[11:37] <Mithrandir> and with that, I'm off to bed.
+[11:37] <_ion> Gaim has libnotify support? That's great.
+=== psusi [i=hidden-u@iriserv.iradimed.com]  has joined #ubuntu-devel
+[11:39] <psusi> right now filesystems are auto mounted by gnome-volume-manager calling pmount when it gets wind of a new disk from hald which finds out about it from udev right?
+[11:41] <psusi> is the goal for fiesty to move to udev doing the mount?  or only to take care of the md/lvm/dmraid parts and leave g-v-m to mount the fs?
+=== shaya [n=spotter@dhcp24.cs.columbia.edu]  has joined #ubuntu-devel
+=== licio [n=licio@ubuntu/member/licio]  has joined #ubuntu-devel
+[11:44] <shaya> weird Q, is there a good document anywhere that explains how apt does dependency resolving?
+[11:45] <shaya> or can someone give me a quick and dirty explanation
+[11:45] <shawarma> Where are the ddebs stored? Still in pitti's public_html ?
+[11:45] <shawarma> shaya: About the code or the policy?
+[11:46] <shaya> not so much policy, but given package X, how does it determine closed set of packages it needs to install
+=== tsmithe` is now known as tsmithe
+[11:46] <shaya> basically looking for something for a writeup I'm doing (where basically saying we don't need to focus on dependency resolving as its a solved problem)
+[11:47] <psusi> it looks at the packages that one depends on and if they aren't already isntalled, installs them?
+[11:50] <shaya> true, I'm more looking for a specific term, basically we have a huge package graph
+[11:50] <shaya> or directed graph
+[11:50] <shaya> where package nodes point to the package nodes they depend on
+[11:50] <shaya> when you want to install package A, apt-get has to create a "term I don't know"
+[11:52] <psusi> it doesn't have to create anything
+[11:52] <psusi> it just installs the packages listed in the depends header
+[11:52] <psusi> and in doing so, may end up  installing more packages listed in THOSE depends
+[11:53] <shawarma> shaya: You're maybe thinking of the dependency tree?
+[11:53] <shawarma> shaya: And it seems that you're actually curious about the policy that governs what apt is supposed to do rather than the actual code in apt. :-)
+[11:54] <shawarma> shaya: ...and the policy is the debian policy.
+[11:54] <shawarma> shaya: You're still free to ask, of course.
+=== givre [n=Florent@APuteaux-152-1-94-74.w90-2.abo.wanadoo.fr]  has joined #ubuntu-devel
+=== barrett9h [n=doti@20151044048.user.veloxzone.com.br]  has joined #ubuntu-devel
+=== givre [n=Florent@APuteaux-152-1-94-74.w90-2.abo.wanadoo.fr]  has left #ubuntu-devel [] 
+=== angasule [n=angasule@190.49.215.94]  has joined #ubuntu-devel
+[12:00] <barrett9h> gcc -m32 won't work on my ubuntu64 system
+[12:00] <barrett9h> can't find stubs-32.h
+[12:04] <shaya> the term I'm looking for is transitive closure
+[12:04] <shaya> basically there's a dependency graph, and apt-get searches for the transitive closure
+[12:05] <geser> barrett9h: install libc6-dev-i386
+=== WaterSevenUb [n=WaterSev@c-65-96-188-198.hsd1.ma.comcast.net]  has joined #ubuntu-devel
+=== luisbg [n=LuisB_G@87.217.146.157]  has joined #ubuntu-devel
+=== luisbg [n=LuisB_G@87.217.146.157]  has joined #ubuntu-devel
+=== luisbg [n=LuisB_G@87.217.146.157]  has joined #ubuntu-devel
+=== ailean [n=ailean@82-40-205-105.stb.ubr07.uddi.blueyonder.co.uk]  has joined #ubuntu-devel
+=== luisbg [n=LuisB_G@87.217.146.157]  has joined #ubuntu-devel
