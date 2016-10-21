@@ -1,6 +1,7 @@
 # coding=UTF-8
 from __future__ import division
 import sys
+from getChat import getChat
 import re
 date = r"[0-9][0-9]?/[0-9][0-9]?/[0-9][0-9]?"
 time = r"[0-9][0-9]?:[0-9][0-9]?"
@@ -73,7 +74,7 @@ class SummaryTool(object):
                     continue
                 score += values[i][j]
             sentences_dic[self.format_sentence(sentences[i])] = score
-            print score
+            #print score
         return sentences_dic
 
     # Return the best sentence in a paragraph
@@ -118,7 +119,7 @@ class SummaryTool(object):
 
 
 #Parse chat log
-def getChat(filename):
+def getChatlocal(filename):
     chatlog = []
     with open(filename) as chat:
         for line in chat:

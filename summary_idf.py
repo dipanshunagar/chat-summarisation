@@ -4,6 +4,7 @@ import sys
 import math
 import numpy
 from nltk.tokenize import word_tokenize
+import codecs
 import re
 date = r"[0-9][0-9]?/[0-9][0-9]?/[0-9][0-9]?"
 time = r"[0-9][0-9]?:[0-9][0-9]?"
@@ -147,7 +148,7 @@ class SummaryTool(object):
 #Parse chat log
 def getChat(filename):
     chatlog = []
-    with open(filename) as chat:
+    with codecs.open(filename,'r', 'utf-8-sig' ) as chat:
         for line in chat:
             if line.find("Messages you send to this chat and calls are now secured with end-to-end encryption. Tap for more info.") >0:
                 continue
